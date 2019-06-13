@@ -24,7 +24,7 @@ class Simulation():
         # Define population configuration
         self.pop_config = None
 
-    def _simulate(self, **kwargs):
+    def simulate(self, **kwargs):
         """
         Conduct a simulation using msprime and the demographic paramters we
         have established
@@ -36,20 +36,6 @@ class Simulation():
                                 **kwargs)
         return tree_seq
 
-    def _ploidy_genotype_matrix(self, tree_seq, ploidy=2):
-        """
-        Function to generate diploid genotype matrices from TreeSequences
-        """
-        geno = tree_seq.genotype_matrix().T
-        num_haps, num_snps = geno.shape
-        assert num_haps % ploidy == 0
-        true_n = int(num_haps/2)
-        true_geno = np.zeros(shape=(true_n, num_snps))
-        for i in range(true_n):
-            snp_x = ploidy*i
-            snp_y = ploidy*i + ploidy
-            true_geno[i] = np.sum(geno[snp_x:snp_y, :], axis=0)
-        return true_geno
 
 
 class DivergenceAdmixture(Simulation):
@@ -64,7 +50,6 @@ class DivergenceAdmixture(Simulation):
             admixture between
         """
         super().__init__()
-        assert t_div > t_adm
 
         # Define effective population size
         self.Ne = Na
@@ -87,7 +72,7 @@ class DivergenceAdmixture(Simulation):
                                              dest=2, proportion=1-alpha),
                            msp.MassMigration(time=t_adm+eps, source=1,
                                              dest=0),
-                           msp.MassMigration(time=t_div, source=2, dest=0)]
+                           msp.MassMigration(time=t_div+t_adm, source=2, dest=0)]
 
 
 class CoalSimUtils:
@@ -159,3 +144,18 @@ class CoalSimUtils:
             ts_simp = tree_seq.simplify(tree_seq.samples(population=j)).first()
             branch_length_pop[j] = ts_simp.get_total_branch_length()
         return branch_length_pop
+
+    def ploidy_genotype_matrix(self, tree_seq, ploidy=2):
+        """
+        Function to generate diploid genotype matrices from TreeSequences
+        """
+        geno = tree_seq.genotype_matrix().T
+        num_haps, num_snps = geno.shape
+        assert num_haps % ploidy == 0
+        true_n = int(num_haps/2)
+        true_geno = np.zeros(shape=(true_n, num_snps))
+        for i in range(true_n):
+            snp_x = ploidy*i
+            snp_y = ploidy*i + ploidy
+            true_geno[i] = np.sum(geno[snp_x:snp_y, :], axis=0)
+        return true_geno
