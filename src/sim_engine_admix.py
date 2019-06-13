@@ -41,14 +41,14 @@ class Simulation():
         Function to generate diploid genotype matrices from TreeSequences
         """
         geno = tree_seq.genotype_matrix().T
-        n, p = geno.shape
-        assert n % ploidy == 0
-        true_n = int(n/2)
-        true_geno = np.zeros(shape=(true_n, p))
+        num_haps, num_snps = geno.shape
+        assert num_haps % ploidy == 0
+        true_n = int(num_haps/2)
+        true_geno = np.zeros(shape=(true_n, num_snps))
         for i in range(true_n):
-            x = ploidy*i
-            y = ploidy*i + ploidy
-            true_geno[i] = np.sum(geno[x:y, :], axis=0)
+            snp_x = ploidy*i
+            snp_y = ploidy*i + ploidy
+            true_geno[i] = np.sum(geno[snp_x:snp_y, :], axis=0)
         return true_geno
 
 
