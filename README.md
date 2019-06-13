@@ -1,2 +1,4 @@
-# diversity_admix
-simulations for study the genetic diversity of admixed populations
+#Genetic diversity of admixmed populations
+
+Coalescent simulations using msprime for the study the genetic diversity of
+admixed populations
