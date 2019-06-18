@@ -3,6 +3,7 @@ from itertools import product
 from sim_engine_admix import DivergenceAdmixture
 import coal_sim_utils as csu
 import datetime
+import pandas as pd
 
 
 def run_admix(
@@ -66,18 +67,31 @@ def main():
     # t_div_list / (2 * Na)
 
     simul_lenght = len(t_div_list) * len(Nb_list) * len(alpha_list)
-    simul_params = np.zeros([simul_lenght, 3])
+    simul_params = np.zeros([simul_lenght, 4])
     simul_results = np.zeros([simul_lenght, 18])
 
     for (i, (t_div, Nb, alpha)) in enumerate(product(t_div_list, Nb_list, alpha_list)):
-        simul_params[i] = np.array([t_div, Nb, alpha])
+        simul_params[i] = np.array([t_div, Na, Nb, alpha])
         simul_results[i] = run_admix(
             t_div=t_div, Na=Na, Nb=Nb, Nc=Na, alpha=alpha, num_replicates=2000
         )
 
     time_stamp = datetime.datetime.now().isoformat().split(".")[0]
-    np.savetxt("../data/simul_results_{}.txt".format(time_stamp), simul_results)
-    np.savetxt("../data/simul_params_{}.txt".format(time_stamp), simul_params)
+
+    pop_labels = ["pop_a", "pop_c", "pop_b"]
+    stats_labels = [
+        "mean_num_seg_sites_",
+        "mean_num_seg_sites_",
+        "mean_nucleotide_div_",
+        "var_nucleotide_div_",
+        "mean_branch_length_",
+        "var_branch_length_",
+    ]
+    columns = [i[0] + i[1] for i in product(stats_labels, pop_labels)]
+    columns = ["t_div", "Na", "Nb", "alpha"] + columns
+
+    output = pd.DataFrame(np.hstack((simul_params, simul_results)), columns=columns)
+    output.to_csv("../data/msprime_admix_results_{}.csv.gz".format(time_stamp))
 
     pass
 
