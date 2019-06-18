@@ -55,12 +55,13 @@ def main():
     :returns: TODO
 
     """
-    Na = 1e2
+    Na = 1e4
     t_div_list = np.linspace(0, 2 * Na, 2)[1:]
     Nb_list = np.linspace(0, Na, 2)[1:]
     alpha_list = np.arange(1, 10, 5) / 10.0
     t_div_list / (2 * Na)
 
+    # Na = 1e4
     # t_div_list = np.linspace(0, 2 * Na, 41)[1:]
     # Nb_list = np.linspace(0, Na, 21)[1:]
     # alpha_list = np.arange(1, 10, 1) / 10.0
@@ -94,6 +95,14 @@ def main():
     output.to_csv("../data/msprime_admix_results_{}.csv.gz".format(time_stamp))
 
     pass
+
+    # x = np.loadtxt("/home/jonatas/admix_diversity-overleaf/scripts/simul_params_2.txt")
+    # y = np.loadtxt("/home/jonatas/admix_diversity-overleaf/scripts/simul_results_2.txt")
+    # nn = np.array([Na] * len(x[:, 2]))
+    # xx = np.vstack((x[:, 0], nn))
+    # xxx = np.hstack((xx.T, x[:,1:]))
+    # out = np.hstack((xxx, y))
+    # output = pd.DataFrame(out, columns=columns)
 
 
 if __name__ == "__main__":
