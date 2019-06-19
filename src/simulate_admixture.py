@@ -60,12 +60,14 @@ def main():
     Nb_list = np.linspace(0, Na, 2)[1:]
     alpha_list = np.arange(1, 10, 5) / 10.0
     t_div_list / (2 * Na)
+    num_samples = 100
 
     # Na = 1e4
     # t_div_list = np.linspace(0, 2 * Na, 41)[1:]
     # Nb_list = np.linspace(0, Na, 21)[1:]
     # alpha_list = np.arange(1, 10, 1) / 10.0
     # t_div_list / (2 * Na)
+    # num_samples = 100
 
     simul_lenght = len(t_div_list) * len(Nb_list) * len(alpha_list)
     simul_params = np.zeros([simul_lenght, 4])
@@ -74,7 +76,7 @@ def main():
     for (i, (t_div, Nb, alpha)) in enumerate(product(t_div_list, Nb_list, alpha_list)):
         simul_params[i] = np.array([t_div, Na, Nb, alpha])
         simul_results[i] = run_admix(
-            t_div=t_div, Na=Na, Nb=Nb, Nc=Na, alpha=alpha, num_replicates=2000
+            t_div=t_div, Na=Na, Nb=Nb, Nc=Na, alpha=alpha, n=num_samples, num_replicates=2000
         )
 
     time_stamp = datetime.datetime.now().isoformat().split(".")[0]
@@ -89,18 +91,19 @@ def main():
         "var_branch_length_",
     ]
     columns = [i[0] + i[1] for i in product(stats_labels, pop_labels)]
-    columns = ["t_div", "Na", "Nb", "alpha"] + columns
+    columns = ["t_div", "num_samples", "Na", "Nb", "alpha"] + columns
 
     output = pd.DataFrame(np.hstack((simul_params, simul_results)), columns=columns)
     output.to_csv("../data/msprime_admix_results_{}.csv.gz".format(time_stamp))
 
     pass
 
+    # n = 100
     # x = np.loadtxt("/home/jonatas/admix_diversity-overleaf/scripts/simul_params_2.txt")
     # y = np.loadtxt("/home/jonatas/admix_diversity-overleaf/scripts/simul_results_2.txt")
-    # nn = np.array([Na] * len(x[:, 2]))
-    # xx = np.vstack((x[:, 0], nn))
-    # xxx = np.hstack((xx.T, x[:,1:]))
+    # nn = np.array([[n, Na]] * len(x[:, 2]))
+    # xx = np.hstack((x, nn))
+    # xxx = xx[:, [0,3,4,1,2]]
     # out = np.hstack((xxx, y))
     # output = pd.DataFrame(out, columns=columns)
 

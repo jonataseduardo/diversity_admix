@@ -39,18 +39,23 @@ def nlinages(n, N, T):
     return n / (n + (1 - n) * np.exp(-T / (2 * N)))
 
 
-def s_admix_ratio(n, Na, Nb, alpha, t_div):
+def s_admix_ratio(t_div, n, Na, Nb, alpha):
     """
-    Ratio of the number of segreating sites of beteween an admixed population
+    Ratio beteween the number of segreating sites of an admixed population
     and one of its source populations imediately after the admixture event.
      
 
     Arguments
     ---------
-    n: initial (present) number of linages 
-    Na: effective population size of the focal source
-    Nb: effective population size of the non-focal source
     t_div: Time interval in generations
+
+    n: initial (present) number of linages 
+
+    Na: effective population size of the focal source
+
+    Nb: effective population size of the non-focal source
+
+    alpha: proportion of the focal source population in the admixed population
 
     Returns
     -------
@@ -66,3 +71,32 @@ def s_admix_ratio(n, Na, Nb, alpha, t_div):
     S0 = 2 * Na * np.log(nlinsplit)
     ratio = (S1 + S2 + S0) / (2 * Na * np.log(n))
     return ratio
+
+
+def admix_coal_time_ratio(t_div, alpha, kappa):
+    """
+    Ratio beteween the average coalesncet time of two linages for the admixed
+    population and one of its source populations imediately after the admixture
+    event.
+     
+
+    Arguments
+    ---------
+    t_div: Time interval in generations coalesncent units of the focal source
+    popualtion (generations / Ne for haploids or genearatios / 2 * Ne for
+    diplods)
+
+    alpha: proportion of the focal source population in the admixed population
+
+    Nb: effective population size of the non-focal source
+
+    Returns
+    -------
+    coal_time_ratio: np.array
+    
+    """
+    r = kappa
+    t = t_div
+    p = alpha
+    q = 1 - alpha
+    return -np.exp(-t / r) * (r - 1.0) * q ** 2 + r * q ** 2 - p * (-2.0 * t * q + p - 2.0)
