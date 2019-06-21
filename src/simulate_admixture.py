@@ -82,9 +82,9 @@ def main():
     time_stamp = datetime.datetime.now().isoformat().split(".")[0]
 
     pop_labels = ["pop_a", "pop_c", "pop_b"]
-    stats_labels = [
+    stats_lbels = [
         "mean_num_seg_sites_",
-        "mean_num_seg_sites_",
+        "var_num_seg_sites_",
         "mean_nucleotide_div_",
         "var_nucleotide_div_",
         "mean_branch_length_",
