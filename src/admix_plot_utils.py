@@ -32,7 +32,7 @@ def set_cmap_levels(max_value, min_value, midpoint=1, digits=1, nticks=15):
     upper_ticks = upper_levels[0::2]
     levels = np.hstack((lower_levels, upper_levels))
     ticks = np.hstack((lower_ticks, upper_ticks))
-    return (levels, ticks)
+    return (np.unique(levels), np.unique(ticks))
 
 
 # Normalizing colormap solition was given in
@@ -101,177 +101,6 @@ class MidPointNorm(Normalize):
                 return val * abs(vmax - midpoint) + midpoint
 
 
-def countour_htz(simul_data, alpha_ref, savefig=True, showfig=True):
-
-    Nb_list = simul_data.Nb.unique()
-    t_div_list = simul_data.t_div.unique()
-    Na = simul_data.Na.unique()
-    psize = len(t_div_list), len(Nb_list)
-    data = simul_data[simul_data.alpha == alpha_ref]
-    kappa_list = Nb_list / Na
-    tcoal_list = t_div_list / (2 * Na)
-
-    x = data.t_div.values.reshape(psize) / (2 * Na)
-    y = data.Nb.values.reshape(psize) / Na
-
-    H1 = data.loc[:, "mean_nucleotide_div_pop_a"].values
-    H2 = data.loc[:, "mean_nucleotide_div_pop_c"].values
-    res = H2 / H1
-    z = res.reshape(psize)
-
-    def f(x, args):
-        th, t_div, alpha = args
-        return ctu.admix_coal_time_ratio(t_div, alpha, x) - th
-
-    def iso_func(th, fargs):
-        x_range = kappa_list
-        y_range = f(kappa_list, args=(th, *fargs))
-        pfit = polyfit(x_range, y_range, 10)
-        roots = np.roots(pfit)
-        xmin, xmax = 0.5 * x_range.min(), 1.1 * x_range.max()
-        x0 = roots[
-            np.where(
-                np.logical_and(
-                    np.logical_and(roots.imag == 0, roots.real > xmin), roots.real < xmax
-                )
-            )
-        ].real
-        try:
-            return x0.min()
-        except:
-            return np.nan
-
-    def iso_th(th):
-        iso = []
-        for t_div in tcoal_list:
-            fargs = (t_div, alpha_ref)
-            # print(fargs)
-            iso += [iso_func(th, fargs)]
-        return np.array(iso)
-
-    cmap = plt.get_cmap("bwr")
-    try:
-        norm = MidPointNorm(midpoint=1)
-    except:
-        norm = MidPointNorm(midpoint=z.min() + 0.01)
-
-    def mk_c(digits):
-        cmap_levels, cmap_ticks = set_cmap_levels(z.max(), z.min(), digits=digits)
-        iso_h = [iso_th(th) for th in cmap_levels]
-        fig = plt.figure()
-        ax = fig.add_subplot(1, 1, 1)
-        ax.set_title(r"$\alpha={{{}}}$".format(alpha_ref))
-        ax.set_xlabel(r"$\mathrm{time} \, (2 N_a \, \mathrm{coalescent \, units})$")
-        ax.set_ylabel(r"$N_b / N_a$")
-        ax.set_xlim((x.min(), x.max()))
-        ax.set_ylim((y.min(), y.max()))
-        im = ax.contourf(x, y, z, levels=cmap_levels, cmap=cmap, norm=norm)
-        for iso in iso_h:
-            ax.plot(tcoal_list, iso, color="black", linestyle="dashed")
-        axcb = fig.colorbar(im)
-        axcb.set_label(r"$H_c / H_a$")
-        axcb.set_ticks(cmap_ticks)
-        return fig
-
-    try:
-        fig = mk_c(2)
-    except:
-        fig = mk_c(3)
-
-    if savefig:
-        fig.savefig("../figures/countour_htz_alpha-{}.pdf".format(alpha_ref))
-    if showfig:
-        fig.show()
-    pass
-
-
-def countour_num_seg_sites(simul_data, alpha_ref, savefig=True, showfig=True):
-
-    Nb_list = simul_data.Nb.unique()
-    t_div_list = simul_data.t_div.unique()
-    Na = simul_data.Na.unique()
-    psize = len(t_div_list), len(Nb_list)
-    data = simul_data[simul_data.alpha == alpha_ref]
-    tcoal_list = t_div_list / (2 * Na)
-    simul_data.columns
-
-    x = data.t_div.values.reshape(psize) / (2 * Na)
-    y = data.Nb.values.reshape(psize) / Na
-
-    H1 = data.loc[:, "mean_num_seg_sites_pop_a"].values
-    H2 = data.loc[:, "mean_num_seg_sites_pop_c"].values
-    res = H2 / H1
-    z = res.reshape(psize)
-
-    n = 100
-
-    def f(x, args):
-        th, t_div, alpha = args
-        return ctu.s_admix_ratio(t_div, n, Na, x, alpha) - th
-
-    def iso_func(th, fargs):
-        x_range = Nb_list
-        y_range = f(x_range, args=(th, *fargs))
-        pfit = polyfit(x_range, y_range, 10)
-        roots = np.roots(pfit)
-        xmin, xmax = x_range.min(), x_range.max()
-        x0 = roots[
-            np.where(
-                np.logical_and(
-                    np.logical_and(roots.imag == 0, roots.real > 0.5 * xmin),
-                    roots.real < 1.1 * xmax,
-                )
-            )
-        ].real
-        try:
-            return x0.min() / Na[0]
-        except:
-            return np.nan
-
-    def iso_th(th):
-        iso = []
-        for t_div in t_div_list:
-            fargs = (t_div / 4, alpha_ref)
-            # print(fargs)
-            iso += [iso_func(th, fargs)]
-        return np.array(iso)
-
-    cmap = plt.get_cmap("bwr")
-    try:
-        norm = MidPointNorm(midpoint=1)
-    except:
-        norm = MidPointNorm(midpoint=z.min() + 0.01)
-
-    def mk_c(digits):
-        cmap_levels, cmap_ticks = set_cmap_levels(z.max(), z.min(), digits=digits)
-        iso_h = [iso_th(th) for th in cmap_levels]
-        fig = plt.figure()
-        ax = fig.add_subplot(1, 1, 1)
-        ax.set_title(r"$\alpha={{{}}}$".format(alpha_ref))
-        ax.set_xlabel(r"$\mathrm{time} \, (2 N_a \, \mathrm{coalescent \, units})$")
-        ax.set_ylabel(r"$N_b / N_a$")
-        ax.set_xlim((x.min(), x.max()))
-        ax.set_ylim((y.min(), y.max()))
-        im = ax.contourf(x, y, z, levels=cmap_levels, cmap=cmap, norm=norm)
-        for iso in iso_h:
-            ax.plot(tcoal_list, iso, color="black", linestyle="dashed")
-        axcb = fig.colorbar(im)
-        axcb.set_label(r"$H_c / H_a$")
-        axcb.set_ticks(cmap_ticks)
-        return fig
-
-    try:
-        fig = mk_c(2)
-    except:
-        fig = mk_c(3)
-
-    if savefig:
-        fig.savefig("../figures/countour_num_seg_sites_alpha-{}.pdf".format(alpha_ref))
-    if showfig:
-        fig.show()
-    pass
-
-
 def lines_htz(simul_params, simul_results, Na, alpha_ref):
 
     t_coal = np.sort(np.unique(simul_params[:, 0])) / (2 * Na)
@@ -316,21 +145,78 @@ def lines_htz(simul_params, simul_results, Na, alpha_ref):
     pass
 
 
+def contour_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=True):
+
+    Nb_list = simul_data.Nb.unique()
+    t_div_list = simul_data.t_div.unique()
+    Na = simul_data.Na.unique()
+    psize = len(t_div_list), len(Nb_list)
+    data = simul_data[simul_data.alpha == alpha_ref]
+
+    x = data.t_div.values.reshape(psize) / (2 * Na)
+    y = data.Nb.values.reshape(psize) / Na
+
+    if stat == "mean_nucleotide_div":
+        H1 = data.loc[:, "mean_nucleotide_div_pop_a"].values
+        H2 = data.loc[:, "mean_nucleotide_div_pop_c"].values
+        res = H2 / H1
+        z = res.reshape(psize)
+        z_th = ctu.admix_coal_time_ratio(x, alpha_ref, y)
+        s_label = r"$H_c / H_a$"
+        figname = "../figures/contour_htz_alpha-{}.pdf".format(alpha_ref)
+    elif stat == "mean_num_seg_sites":
+        n = 100
+        H1 = data.loc[:, "mean_num_seg_sites_pop_a"].values
+        H2 = data.loc[:, "mean_num_seg_sites_pop_c"].values
+        res = H2 / H1
+        z = res.reshape(psize)
+        z_th = ctu.s_admix_ratio(2 * Na * x / 4, n, Na, Na * y, alpha_ref)
+        s_label = r"$S_c / S_a$"
+        figname = "../figures/contour_num_seg_sites_alpha-{}.pdf".format(alpha_ref)
+
+    cmap = plt.get_cmap("bwr")
+    norm = MidPointNorm(midpoint=1)
+    z_max = z.max()
+    z_min = z.min() if z.min() < 1 else 0.95
+    cmap_levels, cmap_ticks = set_cmap_levels(z_max, z_min, digits=digits)
+
+    fig = plt.figure()
+    ax = fig.add_subplot(1, 1, 1)
+    ax.set_title(r"$\alpha={{{}}}$".format(alpha_ref))
+    ax.set_xlabel(r"split time ($2 N_a$  coalescent units)")
+    ax.set_ylabel(r"$N_b / N_a$")
+    ax.set_xlim((x.min(), x.max()))
+    ax.set_ylim((y.min(), y.max()))
+    ct = ax.contourf(x, y, z, levels=cmap_levels, cmap=cmap, norm=norm)
+    ct_th = ax.contour(x, y, z_th, levels=cmap_levels, colors="black", linestyles="dashed")
+    ax.clabel(ct_th, cmap_ticks, inline=True, fmt=f"%.1f", fontsize=10)
+    axcb = fig.colorbar(ct)
+    axcb.set_label(s_label)
+    axcb.set_ticks(cmap_ticks)
+
+    if savefig:
+        fig.savefig(figname)
+    if showfig:
+        fig.show()
+    pass
+
+
 def main():
     # simul_data = pd.read_csv("../data/msprime_admix_results_2019-06-18T14:31:39.csv.gz")
     simul_data = pd.read_csv("../data/msprime_admix_results_2019-06-20T16:56:08.csv")
     simul_data.columns
     alpha_list = simul_data.alpha.unique()
-    alpha_ref = alpha_list[1]
+    alpha_ref = alpha_list[-2]
 
     for alpha_ref in alpha_list:
         try:
-            countour_htz(simul_data, alpha_ref, showfig=False)
+            contour_stats(simul_data, alpha_ref, stat="mean_nucleotide_div", showfig=True)
+            contour_stats(simul_data, alpha_ref, stat="mean_num_seg_sites", showfig=True)
         except:
             None
 
         try:
-            countour_num_seg_sites(simul_data, alpha_ref, showfig=False)
+            contour_num_seg_sites(simul_data, alpha_ref, showfig=True, savefig=False)
         except:
             None
 
