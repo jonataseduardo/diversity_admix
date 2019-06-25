@@ -100,3 +100,43 @@ def admix_coal_time_ratio(t_div, alpha, kappa):
     p = alpha
     q = 1 - alpha
     return -np.exp(-t / r) * (r - 1.0) * q ** 2 + r * q ** 2 - p * (-2.0 * t * q + p - 2.0)
+
+
+def tajima_d_admix(t_div, n, Na, Nb, alpha):
+    """
+    Calculate the Tajima's D statistics for an admixed population
+    and one of its source populations immediately after the admixture event.
+     
+
+    Arguments
+    ---------
+    t_div: Time interval in generations
+
+    n: initial (present) number of linages 
+
+    Na: effective population size of the focal source
+
+    Nb: effective population size of the non-focal source
+
+    alpha: proportion of the focal source population in the admixed population
+
+    Returns
+    -------
+    num_linages: np.array
+    
+    """
+    S1 = branch_length(alpha * n, Na, t_div)
+    S2 = branch_length((1 - alpha) * n, Nb, t_div)
+
+    nlina = nlinages(alpha * n, Na, t_div)
+    nlinb = nlinages((1 - alpha) * n, Nb, t_div)
+    nlinsplit = nlina + nlinb
+    S0 = 2 * Na * np.log(nlinsplit)
+
+    theta_hat = (S1 + S2 + S0) / (sum(1.0 / np.arange(1, n[0])))
+
+    pi_hat = admix_coal_time_ratio(t_div, alpha, Nb / Na)
+
+    td = theta_hat - pi_hat
+
+    return td
