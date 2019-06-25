@@ -3,7 +3,7 @@ import numpy as np
 
 def branch_length(n, N, T):
     """
-    Expected Branch Length of a Single Popupulation in time interval 
+    Expected Branch Length of a Single Population in time interval 
     and constant population size
 
     Arguments
@@ -22,7 +22,7 @@ def branch_length(n, N, T):
 
 def nlinages(n, N, T):
     """
-    Expected number of linages of a Single Popupulation of constant effective 
+    Expected number of linages of a Single Population of constant effective 
     size N at a past time T in generations 
 
     Arguments
@@ -41,8 +41,8 @@ def nlinages(n, N, T):
 
 def s_admix_ratio(t_div, n, Na, Nb, alpha):
     """
-    Ratio beteween the number of segreating sites of an admixed population
-    and one of its source populations imediately after the admixture event.
+    Ratio between the number of segregating sites of an admixed population
+    and one of its source populations immediately after the admixture event.
      
 
     Arguments
@@ -75,16 +75,16 @@ def s_admix_ratio(t_div, n, Na, Nb, alpha):
 
 def admix_coal_time_ratio(t_div, alpha, kappa):
     """
-    Ratio beteween the average coalesncet time of two linages for the admixed
-    population and one of its source populations imediately after the admixture
+    Ratio between the average coalescent time of two linages for the admixed
+    population and one of its source populations immediately after the admixture
     event.
      
 
     Arguments
     ---------
-    t_div: Time interval in generations coalesncent units of the focal source
-    popualtion (generations / Ne for haploids or genearatios / 2 * Ne for
-    diplods)
+    t_div: Time interval in generations coalescent units of the focal source
+    population (generations / Ne for haploids or generations / 2 * Ne for
+    diploids)
 
     alpha: proportion of the focal source population in the admixed population
 
