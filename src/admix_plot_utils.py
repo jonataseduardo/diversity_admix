@@ -165,12 +165,12 @@ def contour_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=T
         s_label = r"$H_c / H_a$"
         figname = "../figures/contour_htz_alpha-{}.pdf".format(alpha_ref)
     elif stat == "mean_num_seg_sites":
-        n = 100
+        n = data.num_samples.unique()
         H1 = data.loc[:, "mean_num_seg_sites_pop_a"].values
         H2 = data.loc[:, "mean_num_seg_sites_pop_c"].values
         res = H2 / H1
         z = res.reshape(psize)
-        z_th = ctu.s_admix_ratio(2 * Na * x / 4, n, Na, Na * y, alpha_ref)
+        z_th = ctu.s_admix_ratio((2 * Na) * x / 4, n, Na, Na * y, alpha_ref)
         s_label = r"$S_c / S_a$"
         figname = "../figures/contour_num_seg_sites_alpha-{}.pdf".format(alpha_ref)
 
@@ -206,7 +206,7 @@ def main():
     simul_data = pd.read_csv("../data/msprime_admix_results_2019-06-20T16:56:08.csv")
     simul_data.columns
     alpha_list = simul_data.alpha.unique()
-    alpha_ref = alpha_list[-2]
+    alpha_ref = alpha_list[5]
 
     for alpha_ref in alpha_list:
         try:
@@ -221,6 +221,23 @@ def main():
             None
 
     pass
+
+    simul_data["tajima_d_pop_c"] = (
+        simul_data.mean_nucleotide_div_pop_c - simul_data.mean_num_seg_sites_pop_c
+    )
+
+    n = data.num_samples.unique()
+    cte = sum(1.0 / np.arange(1, n[0]))
+
+    simul_data["tajima_d_pop_a"] = (
+        simul_data.mean_nucleotide_div_pop_a - simul_data.mean_num_seg_sites_pop_a / cte
+    )
+
+    simul_data["tajima_d_pop_c"] = (
+        simul_data.mean_nucleotide_div_pop_c - simul_data.mean_num_seg_sites_pop_c / cte
+    )
+
+    simul_data.loc[:5, ["mean_nucleotide_div_pop_c", "mean_num_seg_sites_pop_c", "tajima_d_pop_c"]]
 
 
 if __name__ == "__main__":
