@@ -8,6 +8,7 @@ from matplotlib import cbook
 from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
 from numpy import polyfit
+from importlib import reload
 
 
 def set_cmap_levels(max_value, min_value, midpoint=1, digits=1, nticks=15):
@@ -21,8 +22,8 @@ def set_cmap_levels(max_value, min_value, midpoint=1, digits=1, nticks=15):
         lower_levels = np.arange(round(min_value, digits), midpoint, wd)
         upper_levels = np.arange(midpoint, round(max_value, digits), wd)
     else:
-        upper_nticks = round(nticks * (max_value - midpoint) / (max_value - min_value))
-        lower_nticks = round(nticks * (midpoint - min_value) / (max_value - min_value))
+        upper_nticks = int(round(nticks * (max_value - midpoint) / (max_value - min_value)))
+        lower_nticks = int(round(nticks * (midpoint - min_value) / (max_value - min_value)))
         lower_levels = np.round(np.linspace(min_value, midpoint, lower_nticks), decimals=2)
         upper_levels = np.round(
             np.linspace(midpoint, max_value, upper_nticks, endpoint=True), decimals=2
@@ -101,51 +102,96 @@ class MidPointNorm(Normalize):
                 return val * abs(vmax - midpoint) + midpoint
 
 
-def lines_htz(simul_params, simul_results, Na, alpha_ref):
+def lines_stats(simul_data, alpha_ref, stat, k, digits=2, savefig=True, showfig=True):
 
-    t_coal = np.sort(np.unique(simul_params[:, 0])) / (2 * Na)
-    Nb_list = np.sort(np.unique(simul_params[:, 1]))
+    data = simul_data[simul_data.alpha == alpha_ref]
 
-    idx_alpha = simul_params[:, 2] == alpha_ref
-    ha = simul_results[:, 6]
-    hc = simul_results[:, 7]
-    h = hc / ha
+    Nb_list = simul_data.Nb.unique()[::2]
+    t_div_list = simul_data.t_div.unique()
+    Na = simul_data.Na.unique()
+    t_coal = t_div_list / (2 * Na)
 
-    def get_h(h, Nb_ref):
-        idx_Nb = simul_params[:, 1] == Nb_ref
-        return h[idx_Nb & idx_alpha]
+    if stat == "mean_nucleotide_div":
 
-    h_simul_list = [list(zip(t_coal, get_h(h, Nb_ref))) for Nb_ref in Nb_list]
-    h_theory_list = [
-        list(zip(t_coal, ctu.admix_coal_time_ratio(t_coal, alpha_ref, Nb_ref / Na)))
-        for Nb_ref in Nb_list
-    ]
+        def get_val(Nb_ref):
+            h1 = data[data.Nb == Nb_ref].loc[:, "mean_nucleotide_div_pop_a"].values
+            h2 = data[data.Nb == Nb_ref].loc[:, "mean_nucleotide_div_pop_c"].values
+            return h2 / h1
+
+        h_simul_list = [list(zip(t_coal, get_val(Nb_ref))) for Nb_ref in Nb_list]
+        h_theory_list = [
+            list(zip(t_coal, ctu.admix_coal_time_ratio(t_coal, alpha_ref, Nb_ref / Na)))
+            for Nb_ref in Nb_list
+        ]
+        y_label = r"$\frac{\pi_A}{\pi_0}$"
+        lr = 0
+        figname = "../figures/lines_htz_alpha-{}.pdf".format(alpha_ref)
+    elif stat == "mean_num_seg_sites":
+        n = 2 * data.num_samples.unique()
+
+        def get_val(Nb_ref):
+            h1 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_a"].values
+            h2 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_c"].values
+            return h2 / h1
+
+        h_simul_list = [list(zip(t_coal, get_val(Nb_ref))) for Nb_ref in Nb_list]
+        h_theory_list = [
+            list(zip(t_coal, ctu.s_admix_ratio((2 * Na) * t_coal / k, n, Na, Nb_ref, alpha_ref)))
+            for Nb_ref in Nb_list
+        ]
+        y_label = r"$\frac{S_A}{S_0}$"
+        lr = 0
+        figname = "../figures/lines_num_seg_sites_alpha-{}.pdf".format(alpha_ref)
+    elif stat == "tajima_d":
+        n = 2 * data.num_samples.unique()
+
+        def get_val(Nb_ref):
+            h = data[data.Nb == Nb_ref].loc[:, "tajima_d_pop_c"].values
+            return h
+
+        h_simul_list = [list(zip(t_coal, get_val(Nb_ref))) for Nb_ref in Nb_list]
+        h_theory_list = [
+            list(
+                zip(t_coal, ctu.tajima_d_admix((2 * Na) * t_coal / k, n, Na, Nb_ref, alpha_ref, k))
+            )
+            for Nb_ref in Nb_list
+        ]
+        y_label = r"$\theta({\pi_A}) - \theta(S_A)$"
+        lr = 90
+        figname = "../figures/lines_tajimas_d_admix_alpha-{}.png".format(alpha_ref)
+
+    cmap = plt.get_cmap("Spectral")
+
+    hs = np.array(h_simul_list)
+    y_min, y_max = hs[:, :, 1].min(), hs[:, :, 1].max()
 
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
     ax.set_xlim((0, 1))
-    ax.set_ylim((h.min(), h.max()))
+    ax.set_ylim((y_min, y_max))
     ax.set_title(r"$\alpha={{{}}}$".format(alpha_ref))
-    ax.set_xlabel(r"$\mathrm{time} \, (2 N_a \, \mathrm{coalescent \, units})$")
-    ax.set_ylabel(r"$H_c / H_a$")
+    ax.set_xlabel(r"$\mathrm{time} \, (2 N_0 \, \mathrm{coalescent \, units})$")
+    ax.set_ylabel(y_label, rotation=lr, size=14)
     line_segments_simul = LineCollection(
-        h_simul_list, linewidths=1.5, linestyles="solid", cmap="viridis_r"
+        h_simul_list, linewidths=1.5, linestyles="solid", cmap=cmap
     )
     line_segments_simul.set_array(Nb_list / Na)
     ax.add_collection(line_segments_simul)
     line_segments_theory = LineCollection(
-        h_theory_list, linewidths=1.3, linestyles="dashed", cmap="viridis_r"
+        h_theory_list, linewidths=1.3, linestyles="dashed", cmap=cmap
     )
     ax.add_collection(line_segments_theory)
     line_segments_theory.set_array(Nb_list / Na)
     axcb = fig.colorbar(line_segments_simul)
-    axcb.set_label(r"$N_b / N_a$")
-    fig.savefig("htz_time_alpha-{}.pdf".format(alpha_ref))
-    fig.show()
-    pass
+    axcb.set_label(r"$\frac{N_1}{N_0}$", rotation=0)
+
+    if savefig:
+        fig.savefig(figname)
+    if showfig:
+        fig.show()
 
 
-def contour_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=True):
+def contour_stats(simul_data, alpha_ref, stat, k, digits=2, savefig=True, showfig=True):
 
     Nb_list = simul_data.Nb.unique()
     t_div_list = simul_data.t_div.unique()
@@ -164,21 +210,42 @@ def contour_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=T
         z_th = ctu.admix_coal_time_ratio(x, alpha_ref, y)
         s_label = r"$H_c / H_a$"
         figname = "../figures/contour_htz_alpha-{}.pdf".format(alpha_ref)
+        midpoint = 1
+        nticks = 15
+        digits = 1
     elif stat == "mean_num_seg_sites":
-        n = data.num_samples.unique()
+        n = 2 * data.num_samples.unique()
         H1 = data.loc[:, "mean_num_seg_sites_pop_a"].values
         H2 = data.loc[:, "mean_num_seg_sites_pop_c"].values
         res = H2 / H1
         z = res.reshape(psize)
-        z_th = ctu.s_admix_ratio((2 * Na) * x / 4, n, Na, Na * y, alpha_ref)
+        z_th = ctu.s_admix_ratio((2 * Na) * x / k, n, Na, Na * y, alpha_ref)
         s_label = r"$S_c / S_a$"
         figname = "../figures/contour_num_seg_sites_alpha-{}.pdf".format(alpha_ref)
+        midpoint = 1
+        nticks = 15
+        digits = 1
+    elif stat == "tajima_d":
+        n = 2 * data.num_samples.unique()
+        res = data.loc[:, "tajima_d_pop_c"].values
+        z = res.reshape(psize)
+        # reload(ctu)
+        z_th = ctu.tajima_d_admix((2 * Na) * x / k, n, Na, Na * y, alpha_ref)
+        # z_th.max()
+        # z_th.min()
+        s_label = r"Tajima's D (admix pop)"
+        figname = "../figures/contour_tajimas_d_admix_alpha-{}.png".format(alpha_ref)
+        midpoint = 0
+        nticks = 15
+        digits = 3
 
     cmap = plt.get_cmap("bwr")
-    norm = MidPointNorm(midpoint=1)
+    norm = MidPointNorm(midpoint=midpoint)
     z_max = z.max()
-    z_min = z.min() if z.min() < 1 else 0.95
-    cmap_levels, cmap_ticks = set_cmap_levels(z_max, z_min, digits=digits)
+    z_min = z.min() if z.min() < midpoint else midpoint - 0.05
+    cmap_levels, cmap_ticks = set_cmap_levels(
+        z_max, z_min, midpoint=midpoint, digits=digits, nticks=nticks
+    )
 
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
@@ -206,40 +273,52 @@ def main():
     simul_data = pd.read_csv("../data/msprime_admix_results_2019-06-20T16:56:08.csv")
     simul_data.columns
     alpha_list = simul_data.alpha.unique()
-    alpha_ref = alpha_list[5]
+    alpha_ref = alpha_list[1]
 
-    for alpha_ref in alpha_list:
-        try:
-            contour_stats(simul_data, alpha_ref, stat="mean_nucleotide_div", showfig=True)
-            contour_stats(simul_data, alpha_ref, stat="mean_num_seg_sites", showfig=True)
-        except:
-            None
-
-        try:
-            contour_num_seg_sites(simul_data, alpha_ref, showfig=True, savefig=False)
-        except:
-            None
-
-    pass
-
+    Na = simul_data.Na.unique()[0]
     simul_data["tajima_d_pop_c"] = (
         simul_data.mean_nucleotide_div_pop_c - simul_data.mean_num_seg_sites_pop_c
     )
 
-    n = data.num_samples.unique()
-    cte = sum(1.0 / np.arange(1, n[0]))
+    n = 2 * simul_data.num_samples.unique()[0]
+    cte = sum(1.0 / np.arange(1, n))
 
     simul_data["tajima_d_pop_a"] = (
-        simul_data.mean_nucleotide_div_pop_a - simul_data.mean_num_seg_sites_pop_a / cte
+        simul_data.mean_nucleotide_div_pop_a * (n / (n - 1))
+        - simul_data.mean_num_seg_sites_pop_a / cte
     )
 
     simul_data["tajima_d_pop_c"] = (
-        simul_data.mean_nucleotide_div_pop_c - simul_data.mean_num_seg_sites_pop_c / cte
+        (simul_data.mean_nucleotide_div_pop_c * (n / (n - 1))
+        - simul_data.mean_num_seg_sites_pop_c / cte
     )
 
     simul_data.loc[:5, ["mean_nucleotide_div_pop_c", "mean_num_seg_sites_pop_c", "tajima_d_pop_c"]]
 
+    for alpha_ref in alpha_list:
+        try:
+            contour_stats(simul_data, alpha_ref, k=4, stat="mean_nucleotide_div", showfig=False)
+            lines_stats(simul_data, alpha_ref, k=2, stat="mean_nucleotide_div", showfig=True)
+        except:
+            None
+
+        try:
+            reload(ctu)
+            alpha_ref = alpha_list[1]
+            contour_stats(simul_data, alpha_ref, k=4, stat="mean_num_seg_sites", showfig=True)
+            lines_stats(simul_data, alpha_ref, k=4, stat="mean_num_seg_sites", showfig=True)
+        except:
+            None
+
+        try:
+            contour_stats(simul_data, alpha_ref, k=4, stat="tajima_d", showfig=True)
+            lines_stats(simul_data, alpha_ref, k=4, stat="tajima_d", showfig=True)
+        except:
+            None
+    pass
+
 
 if __name__ == "__main__":
     main()
+    
 
