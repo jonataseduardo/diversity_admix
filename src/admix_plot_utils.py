@@ -156,7 +156,7 @@ def lines_stats(simul_data, alpha_ref, stat, k, digits=2, savefig=True, showfig=
             )
             for Nb_ref in Nb_list
         ]
-        y_label = r"$\theta({\pi_A}) - \theta(S_A)$"
+        y_label = r"$\hat{\theta}_{\pi_A} - \hat{\theta}_{S_A}}$"
         lr = 90
         figname = "../figures/lines_tajimas_d_admix_alpha-{}.png".format(alpha_ref)
 
@@ -170,8 +170,8 @@ def lines_stats(simul_data, alpha_ref, stat, k, digits=2, savefig=True, showfig=
     ax.set_xlim((0, 1))
     ax.set_ylim((y_min, y_max))
     ax.set_title(r"$\alpha={{{}}}$".format(alpha_ref))
-    ax.set_xlabel(r"$\mathrm{time} \, (2 N_0 \, \mathrm{coalescent \, units})$")
-    ax.set_ylabel(y_label, rotation=lr, size=14)
+    ax.set_xlabel(r"$\mathrm{time} \, (2 N_0 \, \mathrm{coalescent \, units})$", size=16)
+    ax.set_ylabel(y_label, rotation=lr, size=18, labelpad=10)
     line_segments_simul = LineCollection(
         h_simul_list, linewidths=1.5, linestyles="solid", cmap=cmap
     )
@@ -183,15 +183,16 @@ def lines_stats(simul_data, alpha_ref, stat, k, digits=2, savefig=True, showfig=
     ax.add_collection(line_segments_theory)
     line_segments_theory.set_array(Nb_list / Na)
     axcb = fig.colorbar(line_segments_simul)
-    axcb.set_label(r"$\frac{N_1}{N_0}$", rotation=0)
+    axcb.set_label(r"$\frac{N_1}{N_0}$", rotation=0, size=18, labelpad=10)
 
+    fig.tight_layout()
     if savefig:
         fig.savefig(figname)
     if showfig:
         fig.show()
 
 
-def contour_stats(simul_data, alpha_ref, stat, k, digits=2, savefig=True, showfig=True):
+def contour_stats(simul_data, alpha_ref, stat, k=2, digits=2, savefig=True, showfig=True):
 
     Nb_list = simul_data.Nb.unique()
     t_div_list = simul_data.t_div.unique()
@@ -208,8 +209,9 @@ def contour_stats(simul_data, alpha_ref, stat, k, digits=2, savefig=True, showfi
         res = H2 / H1
         z = res.reshape(psize)
         z_th = ctu.admix_coal_time_ratio(x, alpha_ref, y)
-        s_label = r"$H_c / H_a$"
+        s_label = r"$\frac{\pi_A}{\pi_0}$"
         figname = "../figures/contour_htz_alpha-{}.pdf".format(alpha_ref)
+        lr = 0
         midpoint = 1
         nticks = 15
         digits = 1
@@ -220,8 +222,9 @@ def contour_stats(simul_data, alpha_ref, stat, k, digits=2, savefig=True, showfi
         res = H2 / H1
         z = res.reshape(psize)
         z_th = ctu.s_admix_ratio((2 * Na) * x / k, n, Na, Na * y, alpha_ref)
-        s_label = r"$S_c / S_a$"
+        s_label = r"$\frac{S_A}{S_0}$"
         figname = "../figures/contour_num_seg_sites_alpha-{}.pdf".format(alpha_ref)
+        lr = 0
         midpoint = 1
         nticks = 15
         digits = 1
@@ -229,11 +232,12 @@ def contour_stats(simul_data, alpha_ref, stat, k, digits=2, savefig=True, showfi
         n = 2 * data.num_samples.unique()
         res = data.loc[:, "tajima_d_pop_c"].values
         z = res.reshape(psize)
+        lr = 0
         # reload(ctu)
         z_th = ctu.tajima_d_admix((2 * Na) * x / k, n, Na, Na * y, alpha_ref)
         # z_th.max()
         # z_th.min()
-        s_label = r"Tajima's D (admix pop)"
+        s_label = r""
         figname = "../figures/contour_tajimas_d_admix_alpha-{}.png".format(alpha_ref)
         midpoint = 0
         nticks = 15
@@ -250,17 +254,19 @@ def contour_stats(simul_data, alpha_ref, stat, k, digits=2, savefig=True, showfi
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
     ax.set_title(r"$\alpha={{{}}}$".format(alpha_ref))
-    ax.set_xlabel(r"split time ($2 N_a$  coalescent units)")
-    ax.set_ylabel(r"$N_b / N_a$")
+    ax.set_xlabel(r"split time ($2 N_a$  coalescent units)", size=16)
+    ax.set_ylabel(r"$\frac{N_1}{N_0}$", size=16, rotation=0, labelpad=10)
     ax.set_xlim((x.min(), x.max()))
     ax.set_ylim((y.min(), y.max()))
     ct = ax.contourf(x, y, z, levels=cmap_levels, cmap=cmap, norm=norm)
-    ct_th = ax.contour(x, y, z_th, levels=cmap_levels, colors="black", linestyles="dashed")
-    ax.clabel(ct_th, cmap_ticks, inline=True, fmt=f"%.1f", fontsize=10)
+    if stat != "tajima_d":
+        ct_th = ax.contour(x, y, z_th, levels=cmap_levels, colors="black", linestyles="dashed")
+        ax.clabel(ct_th, cmap_ticks, inline=True, fmt=f"%.1f", fontsize=10)
     axcb = fig.colorbar(ct)
-    axcb.set_label(s_label)
+    axcb.set_label(s_label, size=16, rotation=lr, labelpad=10)
     axcb.set_ticks(cmap_ticks)
 
+    fig.tight_layout()
     if savefig:
         fig.savefig(figname)
     if showfig:
@@ -268,7 +274,7 @@ def contour_stats(simul_data, alpha_ref, stat, k, digits=2, savefig=True, showfi
     pass
 
 
-def main():
+def main(showfig=False):
     # simul_data = pd.read_csv("../data/msprime_admix_results_2019-06-18T14:31:39.csv.gz")
     simul_data = pd.read_csv("../data/msprime_admix_results_2019-06-20T16:56:08.csv")
     simul_data.columns
@@ -289,36 +295,34 @@ def main():
     )
 
     simul_data["tajima_d_pop_c"] = (
-        (simul_data.mean_nucleotide_div_pop_c * (n / (n - 1))
+        simul_data.mean_nucleotide_div_pop_c * (n / (n - 1))
         - simul_data.mean_num_seg_sites_pop_c / cte
     )
 
-    simul_data.loc[:5, ["mean_nucleotide_div_pop_c", "mean_num_seg_sites_pop_c", "tajima_d_pop_c"]]
+    # simul_data.loc[:5, ["mean_nucleotide_div_pop_c", "mean_num_seg_sites_pop_c", "tajima_d_pop_c"]]
 
     for alpha_ref in alpha_list:
         try:
-            contour_stats(simul_data, alpha_ref, k=4, stat="mean_nucleotide_div", showfig=False)
-            lines_stats(simul_data, alpha_ref, k=2, stat="mean_nucleotide_div", showfig=True)
+            contour_stats(simul_data, alpha_ref, k=4, stat="mean_nucleotide_div", showfig=showfig)
+            lines_stats(simul_data, alpha_ref, k=2, stat="mean_nucleotide_div", showfig=showfig)
         except:
             None
 
         try:
-            reload(ctu)
-            alpha_ref = alpha_list[1]
-            contour_stats(simul_data, alpha_ref, k=4, stat="mean_num_seg_sites", showfig=True)
-            lines_stats(simul_data, alpha_ref, k=4, stat="mean_num_seg_sites", showfig=True)
+            contour_stats(simul_data, alpha_ref, k=2, stat="mean_num_seg_sites", showfig=showfig)
+            lines_stats(simul_data, alpha_ref, k=4, stat="mean_num_seg_sites", showfig=showfig)
         except:
             None
 
         try:
-            contour_stats(simul_data, alpha_ref, k=4, stat="tajima_d", showfig=True)
-            lines_stats(simul_data, alpha_ref, k=4, stat="tajima_d", showfig=True)
+            contour_stats(simul_data, alpha_ref, k=2, stat="tajima_d", showfig=showfig)
+            lines_stats(simul_data, alpha_ref, k=2, stat="tajima_d", showfig=showfig)
         except:
             None
     pass
 
 
 if __name__ == "__main__":
+    reload(ctu)
     main()
-    
 

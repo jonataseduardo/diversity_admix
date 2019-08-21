@@ -39,40 +39,6 @@ def nlinages(n, N, T):
     return n / (n + (1 - n) * np.exp(-T / (2 * N)))
 
 
-def s_admix_ratio_old(t_div, n, Na, Nb, alpha):
-    """
-    Ratio between the number of segregating sites of an admixed population
-    and one of its source populations immediately after the admixture event.
-     
-
-    Arguments
-    ---------
-    t_div: Time interval in generations
-
-    n: initial (present) number of linages 
-
-    Na: effective population size of the focal source
-
-    Nb: effective population size of the non-focal source
-
-    alpha: proportion of the focal source population in the admixed population
-
-    Returns
-    -------
-    num_linages: np.array
-    
-    """
-    S1 = branch_length(alpha * n, Na, t_div)
-    S2 = branch_length((1 - alpha) * n, Nb, t_div)
-
-    nlina = nlinages(alpha * n, Na, t_div)
-    nlinb = nlinages((1 - alpha) * n, Nb, t_div)
-    nlinsplit = nlina + nlinb
-    S0 = 2 * Na * np.log(nlinsplit - 1)
-    ratio = (S1 + S2 + S0) / (2 * Na * np.log(n - 1))
-    return ratio
-
-
 def s_admix_ratio(t_div, n, Na, Nb, alpha):
     """
     Ratio between the number of segregating sites of an admixed population
@@ -96,17 +62,16 @@ def s_admix_ratio(t_div, n, Na, Nb, alpha):
     num_linages: np.array
     
     """
-    S1 = branch_length(alpha * n, Na, t_div)
-    S2 = branch_length((1 - alpha) * n, Nb, t_div)
+    S1 = branch_length(alpha * n, Na, 2 * t_div)
+    S2 = branch_length((1 - alpha) * n, Nb, 2 * t_div)
 
-    nlina = nlinages(alpha * n, Na, t_div)
-    nlinb = nlinages((1 - alpha) * n, Nb, t_div)
+    nlina = nlinages(alpha * n, Na, 2 * t_div)
+    nlinb = nlinages((1 - alpha) * n, Nb, 2 * t_div)
     nlinsplit = nlina + nlinb
-    S0 = 2 * Na * np.log(nlinsplit)
-    # S0a = 2 * Na * np.log(nlina - 1)
-    # S0b = 2 * Na * np.log(nlinb - 1)
-    # ratio = (S1 + S2 + S0a + S0b) / (2 * Na * np.log(n - 1))
-    ratio = (S1 + S2 + S0) / (2 * Na * np.log(n - 1))
+    S0 = 2 * Na * np.log(nlinsplit - 1)
+    # Sa = 2 * Na * np.log(n - 1)
+    Sa = 2 * Na * np.sum(1.0 / np.arange(1, n - 1))
+    ratio = (S1 + S2 + S0) / Sa
     return ratio
 
 
