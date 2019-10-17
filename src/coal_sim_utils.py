@@ -88,3 +88,4 @@ def ploidy_genotype_matrix(tree_seq, ploidy=2):
         snp_y = ploidy * i + ploidy
         true_geno[i] = np.sum(geno[snp_x:snp_y, :], axis=0)
     return true_geno
+
