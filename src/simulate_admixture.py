@@ -1,4 +1,5 @@
 import numpy as np
+from joblib import Parallel, delayed
 from itertools import product
 from sim_engine_admix import DivergenceAdmixture
 import coal_sim_utils as csu
@@ -26,7 +27,8 @@ def run_admix(
         length=length, mutation_rate=mutation_rate, num_replicates=num_replicates
     )
 
-    output = np.zeros([6, 3])
+    output = np.zeros([9, 3])
+    # output = np.zeros([6, 3])
 
     # 1c. Calculate segregating sites across all the populations
     simul_trees = [ts for ts in ts_test_ss]
@@ -47,6 +49,15 @@ def run_admix(
     output[4] = branch_length_admix.mean(axis=1)
     output[5] = branch_length_admix.var(axis=1)
 
+    a = (1 / np.arange(1, n)).sum()
+    dstats = htz_admix - branch_length_admix / a / length
+
+    output[6] = dstats.mean(axis=1)
+    output[7] = dstats.var(axis=1)
+    output[8] = output[6] / output[7]
+
+    # return(branch_length_admix, htz_admix)
+
     return output.reshape(-1)
 
 
@@ -57,7 +68,7 @@ def main(test=True):
     """
     if test:
         Na = 1e4
-        t_div_list = np.linspace(0, 2 * Na, 2)[1:]
+        t_div_list = np.linspace(0, 2 * Na, 3)[1:]
         Nb_list = np.linspace(0, Na, 2)[1:]
         alpha_list = np.arange(1, 4, 5) / 10.0
         t_div_list / (2 * Na)
@@ -70,15 +81,17 @@ def main(test=True):
         t_div_list / (2 * Na)
         num_samples = 100
 
-    simul_lenght = len(t_div_list) * len(Nb_list) * len(alpha_list)
-    simul_params = np.zeros([simul_lenght, 5])
-    simul_results = np.zeros([simul_lenght, 18])
-
-    for (i, (t_div, Nb, alpha)) in enumerate(product(t_div_list, Nb_list, alpha_list)):
-        simul_params[i] = np.array([t_div, num_samples, Na, Nb, alpha])
-        simul_results[i] = run_admix(
+    def run_simul(i):
+        (t_div, Nb, alpha) = i
+        par = np.array([t_div, num_samples, Na, Nb, alpha])
+        res = run_admix(
             t_div=t_div, Na=Na, Nb=Nb, Nc=Na, alpha=alpha, n=num_samples, num_replicates=2000
         )
+        return np.hstack((par, res))
+
+    pout = Parallel(n_jobs=2, prefer="threads")(
+        delayed(run_simul)(i) for i in product(t_div_list, Nb_list, alpha_list)
+    )
 
     time_stamp = datetime.datetime.now().isoformat().split(".")[0]
 
@@ -94,12 +107,16 @@ def main(test=True):
     columns = [i[0] + i[1] for i in product(stats_labels, pop_labels)]
     columns = ["t_div", "num_samples", "Na", "Nb", "alpha"] + columns
 
-    output = pd.DataFrame(np.hstack((simul_params, simul_results)), columns=columns)
+    output = pd.DataFrame(pout, columns=columns)
     output.to_csv("../data/msprime_admix_results_{}.csv.gz".format(time_stamp))
 
     print(output)
-    pass
+
+    return output
 
 
 if __name__ == "__main__":
-    main()
+    pout = main()
+    x = run_admix()
+    x
+
