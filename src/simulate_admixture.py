@@ -50,31 +50,32 @@ def run_admix(
     return output.reshape(-1)
 
 
-def main():
+def main(test=True):
     """TODO: Docstring for main.
     :returns: TODO
 
     """
-    Na = 1e4
-    t_div_list = np.linspace(0, 2 * Na, 2)[1:]
-    Nb_list = np.linspace(0, Na, 2)[1:]
-    alpha_list = np.arange(1, 10, 5) / 10.0
-    t_div_list / (2 * Na)
-    num_samples = 100
-
-    # Na = 1e4
-    # t_div_list = np.linspace(0, 2 * Na, 41)[1:]
-    # Nb_list = np.linspace(0, Na, 21)[1:]
-    # alpha_list = np.arange(1, 10, 1) / 10.0
-    # t_div_list / (2 * Na)
-    # num_samples = 100
+    if test:
+        Na = 1e4
+        t_div_list = np.linspace(0, 2 * Na, 2)[1:]
+        Nb_list = np.linspace(0, Na, 2)[1:]
+        alpha_list = np.arange(1, 4, 5) / 10.0
+        t_div_list / (2 * Na)
+        num_samples = 20
+    else:
+        Na = 1e4
+        t_div_list = np.linspace(0, 2 * Na, 41)[1:]
+        Nb_list = np.linspace(0, Na, 21)[1:]
+        alpha_list = np.arange(1, 10, 1) / 10.0
+        t_div_list / (2 * Na)
+        num_samples = 100
 
     simul_lenght = len(t_div_list) * len(Nb_list) * len(alpha_list)
-    simul_params = np.zeros([simul_lenght, 4])
+    simul_params = np.zeros([simul_lenght, 5])
     simul_results = np.zeros([simul_lenght, 18])
 
     for (i, (t_div, Nb, alpha)) in enumerate(product(t_div_list, Nb_list, alpha_list)):
-        simul_params[i] = np.array([t_div, Na, Nb, alpha])
+        simul_params[i] = np.array([t_div, num_samples, Na, Nb, alpha])
         simul_results[i] = run_admix(
             t_div=t_div, Na=Na, Nb=Nb, Nc=Na, alpha=alpha, n=num_samples, num_replicates=2000
         )
@@ -82,7 +83,7 @@ def main():
     time_stamp = datetime.datetime.now().isoformat().split(".")[0]
 
     pop_labels = ["pop_a", "pop_c", "pop_b"]
-    stats_lbels = [
+    stats_labels = [
         "mean_num_seg_sites_",
         "var_num_seg_sites_",
         "mean_nucleotide_div_",
@@ -96,16 +97,8 @@ def main():
     output = pd.DataFrame(np.hstack((simul_params, simul_results)), columns=columns)
     output.to_csv("../data/msprime_admix_results_{}.csv.gz".format(time_stamp))
 
+    print(output)
     pass
-
-    # n = 100
-    # x = np.loadtxt("/home/jonatas/admix_diversity-overleaf/scripts/simul_params_2.txt")
-    # y = np.loadtxt("/home/jonatas/admix_diversity-overleaf/scripts/simul_results_2.txt")
-    # nn = np.array([[n, Na]] * len(x[:, 2]))
-    # xx = np.hstack((x, nn))
-    # xxx = xx[:, [0,3,4,1,2]]
-    # out = np.hstack((xxx, y))
-    # output = pd.DataFrame(out, columns=columns)
 
 
 if __name__ == "__main__":
