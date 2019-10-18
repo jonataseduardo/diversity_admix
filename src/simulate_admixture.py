@@ -56,12 +56,12 @@ def run_admix(
     output[7] = dstats.var(axis=1)
     output[8] = output[6] / output[7]
 
-    # return(branch_length_admix, htz_admix)
+    # print(output[8])
 
     return output.reshape(-1)
 
 
-def main(test=True):
+def main(test=True, n_jobs=2):
     """TODO: Docstring for main.
     :returns: TODO
 
@@ -89,7 +89,7 @@ def main(test=True):
         )
         return np.hstack((par, res))
 
-    pout = Parallel(n_jobs=2, prefer="threads")(
+    pout = Parallel(n_jobs=n_jobs, prefer="threads")(
         delayed(run_simul)(i) for i in product(t_div_list, Nb_list, alpha_list)
     )
 
@@ -103,6 +103,9 @@ def main(test=True):
         "var_nucleotide_div_",
         "mean_branch_length_",
         "var_branch_length_",
+        "tajimas_d_numerator_",
+        "tajimas_d_denominator_",
+        "tajimas_d_",
     ]
     columns = [i[0] + i[1] for i in product(stats_labels, pop_labels)]
     columns = ["t_div", "num_samples", "Na", "Nb", "alpha"] + columns
@@ -110,13 +113,9 @@ def main(test=True):
     output = pd.DataFrame(pout, columns=columns)
     output.to_csv("../data/msprime_admix_results_{}.csv.gz".format(time_stamp))
 
-    print(output)
-
     return output
 
 
 if __name__ == "__main__":
-    pout = main()
-    x = run_admix()
-    x
-
+    # pout = main()
+    main(test=False, n_jobs=60)
