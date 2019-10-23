@@ -1,10 +1,17 @@
+import os
+import sys
 import numpy as np
 from joblib import Parallel, delayed
 from itertools import product
-from sim_engine_admix import DivergenceAdmixture
-import coal_sim_utils as csu
 import datetime
 import pandas as pd
+import importlib
+
+# sys.path.insert(0, "/raid/genevol/users/jonatas/diversity_admix/src/")
+# importlib.import_module("sim_engine_admix")
+# importlib.import_module("coal_sim_utils")
+from sim_engine_admix import DivergenceAdmixture
+import coal_sim_utils as csu
 
 
 def run_admix(
@@ -79,7 +86,7 @@ def main(test=True, n_jobs=2):
         Nb_list = np.linspace(0, Na, 21)[1:]
         alpha_list = np.arange(1, 10, 1) / 10.0
         t_div_list / (2 * Na)
-        num_samples = 100
+        num_samples = 1000
 
     def run_simul(i):
         (t_div, Nb, alpha) = i
@@ -89,7 +96,7 @@ def main(test=True, n_jobs=2):
         )
         return np.hstack((par, res))
 
-    pout = Parallel(n_jobs=n_jobs, prefer="threads")(
+    pout = Parallel(n_jobs=n_jobs, prefer="processes", backend="loky")(
         delayed(run_simul)(i) for i in product(t_div_list, Nb_list, alpha_list)
     )
 
@@ -117,5 +124,5 @@ def main(test=True, n_jobs=2):
 
 
 if __name__ == "__main__":
-    # pout = main()
-    main(test=False, n_jobs=60)
+    main(test=False, n_jobs=90)
+
