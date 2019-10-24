@@ -62,15 +62,16 @@ def s_admix_ratio(t_div, n, Na, Nb, alpha):
     num_linages: np.array
     
     """
-    S1 = branch_length(alpha * n, Na, 2 * t_div)
-    S2 = branch_length((1 - alpha) * n, Nb, 2 * t_div)
+    # gamma_cte from Wakeley book (section 3.3)
+    gamma_cte = 0.577216
+    S1 = branch_length(alpha * n, Na, t_div)
+    S2 = branch_length((1 - alpha) * n, Nb, t_div)
 
-    nlina = nlinages(alpha * n, Na, 2 * t_div)
-    nlinb = nlinages((1 - alpha) * n, Nb, 2 * t_div)
+    nlina = nlinages(alpha * n, Na, t_div)
+    nlinb = nlinages((1 - alpha) * n, Nb, t_div)
     nlinsplit = nlina + nlinb
-    S0 = 2 * Na * np.log(nlinsplit - 1)
-    # Sa = 2 * Na * np.log(n - 1)
-    Sa = 2 * Na * np.sum(1.0 / np.arange(1, n - 1))
+    S0 = 2 * Na * np.log(nlinsplit + gamma_cte)
+    Sa = 2 * Na * np.sum(1.0 / np.arange(1, n))
     ratio = (S1 + S2 + S0) / Sa
     return ratio
 

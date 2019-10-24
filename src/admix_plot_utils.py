@@ -102,7 +102,7 @@ class MidPointNorm(Normalize):
                 return val * abs(vmax - midpoint) + midpoint
 
 
-def lines_stats(simul_data, alpha_ref, stat, k, digits=2, savefig=True, showfig=True):
+def lines_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=True):
 
     data = simul_data[simul_data.alpha == alpha_ref]
 
@@ -136,7 +136,7 @@ def lines_stats(simul_data, alpha_ref, stat, k, digits=2, savefig=True, showfig=
 
         h_simul_list = [list(zip(t_coal, get_val(Nb_ref))) for Nb_ref in Nb_list]
         h_theory_list = [
-            list(zip(t_coal, ctu.s_admix_ratio((2 * Na) * t_coal / k, n, Na, Nb_ref, alpha_ref)))
+            list(zip(t_coal, ctu.s_admix_ratio((2 * Na) * t_coal, n, Na, Nb_ref, alpha_ref)))
             for Nb_ref in Nb_list
         ]
         y_label = r"$\frac{S_A}{S_0}$"
@@ -151,9 +151,7 @@ def lines_stats(simul_data, alpha_ref, stat, k, digits=2, savefig=True, showfig=
 
         h_simul_list = [list(zip(t_coal, get_val(Nb_ref))) for Nb_ref in Nb_list]
         h_theory_list = [
-            list(
-                zip(t_coal, ctu.tajima_d_admix((2 * Na) * t_coal / k, n, Na, Nb_ref, alpha_ref, k))
-            )
+            list(zip(t_coal, ctu.tajima_d_admix((2 * Na) * t_coal, n, Na, Nb_ref, alpha_ref, k)))
             for Nb_ref in Nb_list
         ]
         y_label = r"$\hat{\theta}_{\pi_A} - \hat{\theta}_{S_A}}$"
@@ -192,7 +190,7 @@ def lines_stats(simul_data, alpha_ref, stat, k, digits=2, savefig=True, showfig=
         fig.show()
 
 
-def contour_stats(simul_data, alpha_ref, stat, k=2, digits=2, savefig=True, showfig=True):
+def contour_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=True):
 
     Nb_list = simul_data.Nb.unique()
     t_div_list = simul_data.t_div.unique()
@@ -221,7 +219,7 @@ def contour_stats(simul_data, alpha_ref, stat, k=2, digits=2, savefig=True, show
         H2 = data.loc[:, "mean_num_seg_sites_pop_c"].values
         res = H2 / H1
         z = res.reshape(psize)
-        z_th = ctu.s_admix_ratio((2 * Na) * x / k, n, Na, Na * y, alpha_ref)
+        z_th = ctu.s_admix_ratio((2 * Na) * x, n, Na, Na * y, alpha_ref)
         s_label = r"$\frac{S_A}{S_0}$"
         figname = "../figures/contour_num_seg_sites_alpha-{}.pdf".format(alpha_ref)
         lr = 0
@@ -234,7 +232,7 @@ def contour_stats(simul_data, alpha_ref, stat, k=2, digits=2, savefig=True, show
         z = res.reshape(psize)
         lr = 0
         # reload(ctu)
-        z_th = ctu.tajima_d_admix((2 * Na) * x / k, n, Na, Na * y, alpha_ref)
+        z_th = ctu.tajima_d_admix((2 * Na) * x, n, Na, Na * y, alpha_ref)
         # z_th.max()
         # z_th.min()
         s_label = r""
@@ -275,8 +273,7 @@ def contour_stats(simul_data, alpha_ref, stat, k=2, digits=2, savefig=True, show
 
 
 def main(showfig=False):
-    # simul_data = pd.read_csv("../data/msprime_admix_results_2019-06-18T14:31:39.csv.gz")
-    simul_data = pd.read_csv("../data/msprime_admix_results_2019-06-20T16:56:08.csv")
+    simul_data = pd.read_csv("../data/msprime_admix_results_2019-10-22T19:41:30.csv.gz")
     simul_data.columns
     alpha_list = simul_data.alpha.unique()
     alpha_ref = alpha_list[1]
@@ -303,20 +300,20 @@ def main(showfig=False):
 
     for alpha_ref in alpha_list:
         try:
-            contour_stats(simul_data, alpha_ref, k=4, stat="mean_nucleotide_div", showfig=showfig)
-            lines_stats(simul_data, alpha_ref, k=2, stat="mean_nucleotide_div", showfig=showfig)
+            contour_stats(simul_data, alpha_ref, stat="mean_nucleotide_div", showfig=showfig)
+            lines_stats(simul_data, alpha_ref, stat="mean_nucleotide_div", showfig=showfig)
         except:
             None
 
         try:
-            contour_stats(simul_data, alpha_ref, k=2, stat="mean_num_seg_sites", showfig=showfig)
-            lines_stats(simul_data, alpha_ref, k=4, stat="mean_num_seg_sites", showfig=showfig)
+            contour_stats(simul_data, alpha_ref, stat="mean_num_seg_sites", showfig=showfig)
+            lines_stats(simul_data, alpha_ref, stat="mean_num_seg_sites", showfig=showfig)
         except:
             None
 
         try:
-            contour_stats(simul_data, alpha_ref, k=2, stat="tajima_d", showfig=showfig)
-            lines_stats(simul_data, alpha_ref, k=2, stat="tajima_d", showfig=showfig)
+            contour_stats(simul_data, alpha_ref, stat="tajima_d", showfig=showfig)
+            lines_stats(simul_data, alpha_ref, stat="tajima_d", showfig=showfig)
         except:
             None
     pass
