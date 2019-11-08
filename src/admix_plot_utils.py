@@ -36,9 +36,9 @@ def set_cmap_levels(max_value, min_value, midpoint=1, digits=1, nticks=15):
     return (np.unique(levels), np.unique(ticks))
 
 
-# Normalizing colormap solition was given in
-# https://stackoverflow.com/a/7404116/
 class MidPointNorm(Normalize):
+    # Normalizing colormap solition was given in
+    # https://stackoverflow.com/a/7404116/
     def __init__(self, midpoint=0, vmin=None, vmax=None, clip=False):
         Normalize.__init__(self, vmin, vmax, clip)
         self.midpoint = midpoint
@@ -127,16 +127,23 @@ def lines_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=Tru
         lr = 0
         figname = "../figures/lines_htz_alpha-{}.pdf".format(alpha_ref)
     elif stat == "mean_num_seg_sites":
-        n = 2 * data.num_samples.unique()
+        n = data.num_samples.unique()
 
         def get_val(Nb_ref):
             h1 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_a"].values
+            h3 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_b"].values
             h2 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_c"].values
-            return h2 / h1
+            # return h2 / h1
+            return h3
 
         h_simul_list = [list(zip(t_coal, get_val(Nb_ref))) for Nb_ref in Nb_list]
         h_theory_list = [
-            list(zip(t_coal, ctu.s_admix_ratio((2 * Na) * t_coal, n, Na, Nb_ref, alpha_ref)))
+            list(
+                zip(
+                    t_coal,
+                    ctu.s_admix_ratio((2 * Na) * t_coal, 2 * n, 2 * Na, 2 * Nb_ref, alpha_ref),
+                )
+            )
             for Nb_ref in Nb_list
         ]
         y_label = r"$\frac{S_A}{S_0}$"
@@ -166,7 +173,7 @@ def lines_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=Tru
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
     ax.set_xlim((0, 1))
-    ax.set_ylim((y_min, y_max))
+    ax.set_ylim((0.9 * y_min, 1.1 * y_max))
     ax.set_title(r"$\alpha={{{}}}$".format(alpha_ref))
     ax.set_xlabel(r"$\mathrm{time} \, (2 N_0 \, \mathrm{coalescent \, units})$", size=16)
     ax.set_ylabel(y_label, rotation=lr, size=18, labelpad=10)
@@ -217,9 +224,9 @@ def contour_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=T
         n = 2 * data.num_samples.unique()
         H1 = data.loc[:, "mean_num_seg_sites_pop_a"].values
         H2 = data.loc[:, "mean_num_seg_sites_pop_c"].values
-        res = H2 / H1
+        # res = H2 / H1
         z = res.reshape(psize)
-        z_th = ctu.s_admix_ratio((2 * Na) * x, n, Na, Na * y, alpha_ref)
+        z_th = ctu.s_admix_ratio((2 * Na) * x, n, 2 * Na, 2 * Na * y, alpha_ref)
         s_label = r"$\frac{S_A}{S_0}$"
         figname = "../figures/contour_num_seg_sites_alpha-{}.pdf".format(alpha_ref)
         lr = 0
@@ -274,9 +281,8 @@ def contour_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=T
 
 def main(showfig=False):
     simul_data = pd.read_csv("../data/msprime_admix_results_2019-10-22T19:41:30.csv.gz")
-    simul_data.columns
     alpha_list = simul_data.alpha.unique()
-    alpha_ref = alpha_list[1]
+    alpha_ref = alpha_list[-1]
 
     Na = simul_data.Na.unique()[0]
     simul_data["tajima_d_pop_c"] = (
@@ -307,6 +313,7 @@ def main(showfig=False):
 
         try:
             contour_stats(simul_data, alpha_ref, stat="mean_num_seg_sites", showfig=showfig)
+            reload(ctu)
             lines_stats(simul_data, alpha_ref, stat="mean_num_seg_sites", showfig=showfig)
         except:
             None
@@ -320,6 +327,6 @@ def main(showfig=False):
 
 
 if __name__ == "__main__":
-    reload(ctu)
+    showfig = True
     main()
 

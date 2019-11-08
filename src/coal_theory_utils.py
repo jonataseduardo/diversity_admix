@@ -4,7 +4,7 @@ import numpy as np
 def branch_length(n, N, T):
     """
     Expected Branch Length of a Single Population in time interval 
-    and constant population size
+    and constant population size (Haploid Individuals)
 
     Arguments
     ---------
@@ -28,7 +28,7 @@ def nlinages(n, N, T):
     Arguments
     ---------
     n: initial (present) number of linages 
-    N: effective population size 
+    N: effective population size (Haploid indviduals) 
     T: Time interval in generations
 
     Returns
@@ -63,17 +63,33 @@ def s_admix_ratio(t_div, n, Na, Nb, alpha):
     
     """
     # gamma_cte from Wakeley book (section 3.3)
-    gamma_cte = 0.577216
-    S1 = branch_length(alpha * n, Na, t_div)
-    S2 = branch_length((1 - alpha) * n, Nb, t_div)
 
-    nlina = nlinages(alpha * n, Na, t_div)
-    nlinb = nlinages((1 - alpha) * n, Nb, t_div)
-    nlinsplit = nlina + nlinb
-    S0 = 2 * Na * np.log(nlinsplit + gamma_cte)
-    Sa = 2 * Na * np.sum(1.0 / np.arange(1, n))
-    ratio = (S1 + S2 + S0) / Sa
-    return ratio
+    gamma_cte = 0.577
+    length = 1e4
+    mutation_rate = 1e-8
+    theta = mutation_rate * length
+    ns_a = nlinages(n, Na, t_div)
+    ns_b = nlinages(n, Nb, t_div)
+    Sa_before = branch_length(n, Na, t_div)
+    Sa_after = 2 * Na * np.log(ns_a + ns_b) - branch_length(ns_a + ns_b, Na, t_div)
+    # S0_after = 2 * Na * np.log(ns_0 + ns_1) - t_div
+    Sa = theta * (Sa_before + Sa_after)
+    Sb_before = branch_length(n, Nb, t_div)
+    Sb_after = ((Na - Nb) / Na) * np.log(ns_a + ns_a) - (Nb / Na) * branch_length(
+        ns_a + ns_b, Na, t_div
+    )
+    Sb = theta * (Sb_before + Sb_after)
+    return Sb
+
+    # S1 = branch_length(alpha * n, Na, t_div)
+    # S2 = branch_length((1 - alpha) * n, Nb, t_div)
+    # ns_a0 = nlinages(alpha * n, Na, t_div)
+    # ns_a1 = nlinages((1 - alpha) * n, Nb, t_div)
+    # nlinsplit = nlina + nlinb
+    # S0 = 2 * Na * np.log(nlinsplit + gamma_cte)
+    # Sa = 2 * Na * np.sum(1.0 / np.arange(1, n))
+    # ratio = (S1 + S2 + S0) / Sa
+    # return ratio
 
 
 def admix_coal_time_ratio(t_div, alpha, kappa):
