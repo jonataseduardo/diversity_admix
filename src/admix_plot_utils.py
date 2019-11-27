@@ -26,8 +26,8 @@ def set_cmap_levels(max_value, min_value, midpoint=1, digits=1, nticks=15):
         lower_nticks = int(round(nticks * (midpoint - min_value) / (max_value - min_value)))
         lower_levels = np.round(np.linspace(min_value, midpoint, lower_nticks), decimals=2)
         upper_levels = np.round(
-            np.linspace(midpoint, max_value, upper_nticks, endpoint=True), decimals=2
-        )
+                np.linspace(midpoint, max_value, upper_nticks, endpoint=True), decimals=2
+                )
 
     lower_ticks = lower_levels[::-1][1::2][::-1]
     upper_ticks = upper_levels[0::2]
@@ -130,11 +130,13 @@ def lines_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=Tru
         n = data.num_samples.unique()
 
         def get_val(Nb_ref):
-            h1 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_a"].values
-            h3 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_b"].values
-            h2 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_c"].values
+            # h1 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_b"].values
+            # h2 = data[data.Nb == Nb_ref].loc[:, "mean_branch_length_pop_b"].values
+            h1 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_c"].values
+            h2 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_a"].values
             # return h2 / h1
-            return h3
+            h = h1 / h2
+            return h
 
         h_simul_list = [list(zip(t_coal, get_val(Nb_ref))) for Nb_ref in Nb_list]
         h_theory_list = [
@@ -158,7 +160,7 @@ def lines_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=Tru
 
         h_simul_list = [list(zip(t_coal, get_val(Nb_ref))) for Nb_ref in Nb_list]
         h_theory_list = [
-            list(zip(t_coal, ctu.tajima_d_admix((2 * Na) * t_coal, n, Na, Nb_ref, alpha_ref, k)))
+            list(zip(t_coal, ctu.tajima_d_admix((2 * Na) * t_coal, n, Na, Nb_ref, alpha_ref)))
             for Nb_ref in Nb_list
         ]
         y_label = r"$\hat{\theta}_{\pi_A} - \hat{\theta}_{S_A}}$"
@@ -280,7 +282,7 @@ def contour_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=T
 
 
 def main(showfig=False):
-    simul_data = pd.read_csv("../data/msprime_admix_results_2019-10-22T19:41:30.csv.gz")
+    simul_data = pd.read_csv("../data/msprime_admix_results_2019-11-22T17:25:51.csv.gz")
     alpha_list = simul_data.alpha.unique()
     alpha_ref = alpha_list[-1]
 
@@ -327,6 +329,16 @@ def main(showfig=False):
 
 
 if __name__ == "__main__":
+    # main()
     showfig = True
-    main()
+    simul_data = pd.read_csv("../data/msprime_admix_results_2019-11-22T17:25:51.csv.gz")
+    alpha_list = simul_data.alpha.unique()
+    alpha_ref = alpha_list[-1]
+    reload(ctu)
+    lines_stats(simul_data, alpha_ref, stat="mean_num_seg_sites", showfig=showfig)
+
+    %time comb(3,1)
+    %time scipy.special.comb(3,1)
+
+
 
