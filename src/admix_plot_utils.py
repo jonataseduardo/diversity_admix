@@ -135,7 +135,7 @@ def lines_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=Tru
             h2 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_a"].values
             # return h2 / h1
             h = h1 / h2
-            return h1
+            return h
 
         h_simul_list = [list(zip(t_coal, get_val(Nb_ref))) for Nb_ref in Nb_list]
         h_theory_list = [
@@ -223,10 +223,10 @@ def contour_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=T
         nticks = 15
         digits = 1
     elif stat == "mean_num_seg_sites":
-        n = 2 * data.num_samples.unique()
+        n = data.num_samples.unique()
         H1 = data.loc[:, "mean_num_seg_sites_pop_a"].values
         H2 = data.loc[:, "mean_num_seg_sites_pop_c"].values
-        # res = H2 / H1
+        res = H2 / H1
         z = res.reshape(psize)
         z_th = ctu.s_admix_ratio((2 * Na) * x, n, 2 * Na, 2 * Na * y, alpha_ref)
         s_label = r"$\frac{S_A}{S_0}$"

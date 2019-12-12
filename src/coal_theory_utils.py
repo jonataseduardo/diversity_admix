@@ -103,7 +103,8 @@ def nsites_pop_a(t_div, na, nb, Na, Nb, subtract_fixed=True):
     #    sa = sa_before + sa_after - sf_after
     # else:
     #    sa = sa_before + sa_after
-    sa = 2 * Na * sum(1.0 / np.arange(1, na))
+    # sa = 2 * Na * sum(1.0 / np.arange(1, na))
+    sa = 2 * Na * np.log(na)
     return sa
 
 
@@ -201,6 +202,7 @@ def s_admix(t_div, na, nb, Na, Nb, subtract_fixed=True):
     branch_length: np.array
     
     """
+    gamma_cte = 0.577
     ns_a = nlinages(na, Na, t_div)
     ns_b = nlinages(nb, Nb, t_div)
     s_before = 2 * Na * np.log(ns_a + ns_b)
@@ -243,8 +245,8 @@ def s_admix_ratio(t_div, n, Na, Nb, alpha):
   """
     Sadmix = s_admix(t_div, alpha * n, (1 - alpha) * n, Na, Nb, subtract_fixed=True)
     Sa = nsites_pop_a(t_div, n, n, Na, Nb, subtract_fixed=True)
-    # return Sadmix / Sa
-    return Sadmix
+    return Sadmix / Sa
+    # return 1e-4 * Sadmix
 
 
 # def s_admix_ratio(t_div, n, Na, Nb, alpha):

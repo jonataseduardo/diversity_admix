@@ -39,7 +39,6 @@ def main(showfig=False):
 
         try:
             contour_stats(simul_data, alpha_ref, stat="mean_num_seg_sites", showfig=showfig)
-            reload(ctu)
             lines_stats(simul_data, alpha_ref, stat="mean_num_seg_sites", showfig=showfig)
         except:
             None
@@ -59,8 +58,8 @@ if __name__ == "__main__":
     alpha_list = simul_data.alpha.unique()
     Na = simul_data.Na.unique()[0]
     n = simul_data.num_samples.unique()[0]
-    4 * Na * sum(1.0 / np.arange(1, n))
-    alpha_ref = alpha_list[-1]
+    alpha_ref = alpha_list[4]
     reload(ctu)
     reload(apu)
     apu.lines_stats(simul_data, alpha_ref, stat="mean_num_seg_sites", showfig=showfig)
+    apu.contour_stats(simul_data, alpha_ref, stat="mean_num_seg_sites", showfig=showfig)
