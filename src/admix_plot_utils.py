@@ -8,7 +8,6 @@ from matplotlib import cbook
 from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
 from numpy import polyfit
-from importlib import reload
 
 
 def set_cmap_levels(max_value, min_value, midpoint=1, digits=1, nticks=15):
@@ -26,8 +25,8 @@ def set_cmap_levels(max_value, min_value, midpoint=1, digits=1, nticks=15):
         lower_nticks = int(round(nticks * (midpoint - min_value) / (max_value - min_value)))
         lower_levels = np.round(np.linspace(min_value, midpoint, lower_nticks), decimals=2)
         upper_levels = np.round(
-                np.linspace(midpoint, max_value, upper_nticks, endpoint=True), decimals=2
-                )
+            np.linspace(midpoint, max_value, upper_nticks, endpoint=True), decimals=2
+        )
 
     lower_ticks = lower_levels[::-1][1::2][::-1]
     upper_ticks = upper_levels[0::2]
@@ -136,15 +135,12 @@ def lines_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=Tru
             h2 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_a"].values
             # return h2 / h1
             h = h1 / h2
-            return h
+            return h1
 
         h_simul_list = [list(zip(t_coal, get_val(Nb_ref))) for Nb_ref in Nb_list]
         h_theory_list = [
             list(
-                zip(
-                    t_coal,
-                    ctu.s_admix_ratio((2 * Na) * t_coal, 2 * n, 2 * Na, 2 * Nb_ref, alpha_ref),
-                )
+                zip(t_coal, ctu.s_admix_ratio((2 * Na) * t_coal, n, 2 * Na, 2 * Nb_ref, alpha_ref))
             )
             for Nb_ref in Nb_list
         ]
@@ -170,7 +166,11 @@ def lines_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=Tru
     cmap = plt.get_cmap("Spectral")
 
     hs = np.array(h_simul_list)
-    y_min, y_max = hs[:, :, 1].min(), hs[:, :, 1].max()
+    ht = np.array(h_theory_list)
+    y_min, y_max = (
+        min(hs[:, :, 1].min(), ht[:, :, 1].min()),
+        max(hs[:, :, 1].max(), ht[:, :, 1].max()),
+    )
 
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
@@ -279,66 +279,4 @@ def contour_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=T
     if showfig:
         fig.show()
     pass
-
-
-def main(showfig=False):
-    simul_data = pd.read_csv("../data/msprime_admix_results_2019-11-22T17:25:51.csv.gz")
-    alpha_list = simul_data.alpha.unique()
-    alpha_ref = alpha_list[-1]
-
-    Na = simul_data.Na.unique()[0]
-    simul_data["tajima_d_pop_c"] = (
-        simul_data.mean_nucleotide_div_pop_c - simul_data.mean_num_seg_sites_pop_c
-    )
-
-    n = 2 * simul_data.num_samples.unique()[0]
-    cte = sum(1.0 / np.arange(1, n))
-
-    simul_data["tajima_d_pop_a"] = (
-        simul_data.mean_nucleotide_div_pop_a * (n / (n - 1))
-        - simul_data.mean_num_seg_sites_pop_a / cte
-    )
-
-    simul_data["tajima_d_pop_c"] = (
-        simul_data.mean_nucleotide_div_pop_c * (n / (n - 1))
-        - simul_data.mean_num_seg_sites_pop_c / cte
-    )
-
-    # simul_data.loc[:5, ["mean_nucleotide_div_pop_c", "mean_num_seg_sites_pop_c", "tajima_d_pop_c"]]
-
-    for alpha_ref in alpha_list:
-        try:
-            contour_stats(simul_data, alpha_ref, stat="mean_nucleotide_div", showfig=showfig)
-            lines_stats(simul_data, alpha_ref, stat="mean_nucleotide_div", showfig=showfig)
-        except:
-            None
-
-        try:
-            contour_stats(simul_data, alpha_ref, stat="mean_num_seg_sites", showfig=showfig)
-            reload(ctu)
-            lines_stats(simul_data, alpha_ref, stat="mean_num_seg_sites", showfig=showfig)
-        except:
-            None
-
-        try:
-            contour_stats(simul_data, alpha_ref, stat="tajima_d", showfig=showfig)
-            lines_stats(simul_data, alpha_ref, stat="tajima_d", showfig=showfig)
-        except:
-            None
-    pass
-
-
-if __name__ == "__main__":
-    # main()
-    showfig = True
-    simul_data = pd.read_csv("../data/msprime_admix_results_2019-11-22T17:25:51.csv.gz")
-    alpha_list = simul_data.alpha.unique()
-    alpha_ref = alpha_list[-1]
-    reload(ctu)
-    lines_stats(simul_data, alpha_ref, stat="mean_num_seg_sites", showfig=showfig)
-
-    %time comb(3,1)
-    %time scipy.special.comb(3,1)
-
-
 

@@ -95,14 +95,15 @@ def nsites_pop_a(t_div, na, nb, Na, Nb, subtract_fixed=True):
     branch_length: np.array
     
     """
-    ns_a = nlinages(na, Na, t_div)
-    sa_before = 2 * Na * np.log(ns_a)
-    sa_after = branch_length(na, Na, t_div)
-    if subtract_fixed:
-        sf_after = sites_fixed_after(t_div, na, nb, Na, Nb)
-        sa = sa_before + sa_after - sf_after
-    else:
-        sa = sa_before + sa_after
+    # ns_a = nlinages(na, Na, t_div)
+    # sa_before = 2 * Na * np.log(ns_a)
+    # sa_after = branch_length(na, Na, t_div)
+    # if subtract_fixed:
+    #    sf_after = sites_fixed_after(t_div, na, nb, Na, Nb)
+    #    sa = sa_before + sa_after - sf_after
+    # else:
+    #    sa = sa_before + sa_after
+    sa = 2 * Na * sum(1.0 / np.arange(1, na))
     return sa
 
 
@@ -177,31 +178,99 @@ def nsites_2pop(t_div, na, nb, Na, Nb, subtract_fixed=True):
     return stotal
 
 
-def s_admix_ratio(t_div, n, Na, Nb, alpha):
+def s_admix(t_div, na, nb, Na, Nb, subtract_fixed=True):
     """
-    Ratio between the number of segregating sites of an admixed population
-    and one of its source populations immediately after the admixture event.
+    number of seg sites in the source population of constant size in the demographic model.
 
     Arguments
     ---------
     t_div: Time interval in generations
 
-    n: initial (present) number of linages 
+    na: initial (present) number of linages in pop a
+    
+    nb: initial (present) number of linages in pop b
 
-    Na: effective population size of the focal source
+    Na: effective population size of the constant size source
 
-    Nb: effective population size of the non-focal source
+    Nb: effective population size of the of the second source after the split
 
-    alpha: proportion of the focal source population in the admixed population
+    subtract_fixed: boolean (default True), subtract the fixed sites on both source populations
 
     Returns
     -------
-    num_linages: np.array
+    branch_length: np.array
     
     """
-    Sadmix = nsites_2pop(t_div, alpha * n, (1 - alpha) * n, Na, Nb, subtract_fixed=True)
+    ns_a = nlinages(na, Na, t_div)
+    ns_b = nlinages(nb, Nb, t_div)
+    s_before = 2 * Na * np.log(ns_a + ns_b)
+
+    sa_after = branch_length(na, Na, t_div)
+    sb_after = branch_length(nb, Nb, t_div)
+    s_after = sa_after + sb_after
+    if subtract_fixed:
+        # sf_after = sites_fixed_after(t_div, na, nb, Na, Nb)
+        sf_before = 0
+        sf_after = t_div
+        # sf_before = (1 / ns_a + 1 / ns_b) / comb(ns_a + ns_b, ns_a)
+        stotal = s_before + s_after + sf_before - sf_after
+    else:
+        stotal = s_before + s_after
+    return stotal
+
+
+def s_admix_ratio(t_div, n, Na, Nb, alpha):
+    """
+  Ratio between the number of segregating sites of an admixed population
+  and one of its source populations immediately after the admixture event.
+
+  Arguments
+  ---------
+  t_div: Time interval in generations
+
+  n: initial (present) number of linages
+
+  Na: effective population size of the focal source
+
+  Nb: effective population size of the non-focal source
+
+  alpha: proportion of the focal source population in the admixed population
+
+  Returns
+  -------
+  num_linages: np.array
+
+  """
+    Sadmix = s_admix(t_div, alpha * n, (1 - alpha) * n, Na, Nb, subtract_fixed=True)
     Sa = nsites_pop_a(t_div, n, n, Na, Nb, subtract_fixed=True)
-    return Sadmix / Sa
+    # return Sadmix / Sa
+    return Sadmix
+
+
+# def s_admix_ratio(t_div, n, Na, Nb, alpha):
+#    """
+#   Ratio between the number of segregating sites of an admixed population
+#   and one of its source populations immediately after the admixture event.
+#
+#   Arguments
+#   ---------
+#   t_div: Time interval in generations
+#
+#   n: initial (present) number of linages
+#
+#   Na: effective population size of the focal source
+#
+#   Nb: effective population size of the non-focal source
+#
+#   alpha: proportion of the focal source population in the admixed population
+#
+#   Returns
+#   -------
+#   num_linages: np.array
+#
+#   """
+#    t1 = np.ones(len(t_div))
+#    return 1e-4 * 2 * Na * np.sum(1 / np.arange(1, n)) * t1
 
 
 def admix_coal_time_ratio(t_div, alpha, kappa):
