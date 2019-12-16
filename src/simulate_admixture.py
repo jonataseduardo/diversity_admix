@@ -6,10 +6,7 @@ from itertools import product
 import datetime
 import pandas as pd
 import importlib
-
-# sys.path.insert(0, "/raid/genevol/users/jonatas/diversity_admix/src/")
-# importlib.import_module("sim_engine_admix")
-# importlib.import_module("coal_sim_utils")
+from importlib import reload
 from sim_engine_admix import DivergenceAdmixture
 import coal_sim_utils as csu
 
@@ -68,7 +65,7 @@ def run_admix(
     return output.reshape(-1)
 
 
-def main(test=True, n_jobs=2):
+def main(test=True, num_samples=1000, n_jobs=2):
     """TODO: Docstring for main.
     :returns: TODO
 
@@ -86,7 +83,7 @@ def main(test=True, n_jobs=2):
         Nb_list = np.linspace(0, Na, 21)[1:]
         alpha_list = np.arange(1, 10, 1) / 10.0
         t_div_list / (2 * Na)
-        num_samples = 1000
+        num_samples = num_samples
 
     def run_simul(i):
         (t_div, Nb, alpha) = i
@@ -124,5 +121,8 @@ def main(test=True, n_jobs=2):
 
 
 if __name__ == "__main__":
-    main(test=False, n_jobs=90)
+    reload(csu)
+    output = main(test=True)
+    output.mean_num_seg_sites_pop_a
+    main(test=False, num_samples=100, n_jobs=90)
 
