@@ -22,8 +22,11 @@ def seg_sites_pops(tree_seq):
     npops = tree_seq.num_populations
     seg_sites = np.zeros(npops, dtype=np.uint16)
     for j in range(npops):
-        ts_simp_pop = tree_seq.simplify(tree_seq.samples(population=j))
-        seg_sites[j] = ts_simp_pop.num_sites
+        # ts_simp_pop = tree_seq.simplify(tree_seq.samples(population=j))
+        # seg_sites[j] = ts_simp_pop.num_sites
+        seg_sites[j] = tree_seq.segregating_sites(
+            tree_seq.samples(population=j), span_normalise=False
+        )
     return seg_sites
 
 
