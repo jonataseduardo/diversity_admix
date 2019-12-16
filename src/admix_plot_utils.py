@@ -8,7 +8,6 @@ from matplotlib import cbook
 from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
 from numpy import polyfit
-from importlib import reload
 
 
 def set_cmap_levels(max_value, min_value, midpoint=1, digits=1, nticks=15):
@@ -130,19 +129,18 @@ def lines_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=Tru
         n = data.num_samples.unique()
 
         def get_val(Nb_ref):
-            h1 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_a"].values
-            h3 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_b"].values
-            h2 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_c"].values
+            # h1 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_b"].values
+            # h2 = data[data.Nb == Nb_ref].loc[:, "mean_branch_length_pop_b"].values
+            h1 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_c"].values
+            h2 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_a"].values
             # return h2 / h1
-            return h3
+            h = h1 / h2
+            return h
 
         h_simul_list = [list(zip(t_coal, get_val(Nb_ref))) for Nb_ref in Nb_list]
         h_theory_list = [
             list(
-                zip(
-                    t_coal,
-                    ctu.s_admix_ratio((2 * Na) * t_coal, 2 * n, 2 * Na, 2 * Nb_ref, alpha_ref),
-                )
+                zip(t_coal, ctu.s_admix_ratio((2 * Na) * t_coal, n, 2 * Na, 2 * Nb_ref, alpha_ref))
             )
             for Nb_ref in Nb_list
         ]
@@ -158,7 +156,7 @@ def lines_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=Tru
 
         h_simul_list = [list(zip(t_coal, get_val(Nb_ref))) for Nb_ref in Nb_list]
         h_theory_list = [
-            list(zip(t_coal, ctu.tajima_d_admix((2 * Na) * t_coal, n, Na, Nb_ref, alpha_ref, k)))
+            list(zip(t_coal, ctu.tajima_d_admix((2 * Na) * t_coal, n, Na, Nb_ref, alpha_ref)))
             for Nb_ref in Nb_list
         ]
         y_label = r"$\hat{\theta}_{\pi_A} - \hat{\theta}_{S_A}}$"
@@ -168,7 +166,11 @@ def lines_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=Tru
     cmap = plt.get_cmap("Spectral")
 
     hs = np.array(h_simul_list)
-    y_min, y_max = hs[:, :, 1].min(), hs[:, :, 1].max()
+    ht = np.array(h_theory_list)
+    y_min, y_max = (
+        min(hs[:, :, 1].min(), ht[:, :, 1].min()),
+        max(hs[:, :, 1].max(), ht[:, :, 1].max()),
+    )
 
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
@@ -221,10 +223,10 @@ def contour_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=T
         nticks = 15
         digits = 1
     elif stat == "mean_num_seg_sites":
-        n = 2 * data.num_samples.unique()
+        n = data.num_samples.unique()
         H1 = data.loc[:, "mean_num_seg_sites_pop_a"].values
         H2 = data.loc[:, "mean_num_seg_sites_pop_c"].values
-        # res = H2 / H1
+        res = H2 / H1
         z = res.reshape(psize)
         z_th = ctu.s_admix_ratio((2 * Na) * x, n, 2 * Na, 2 * Na * y, alpha_ref)
         s_label = r"$\frac{S_A}{S_0}$"
@@ -277,56 +279,4 @@ def contour_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=T
     if showfig:
         fig.show()
     pass
-
-
-def main(showfig=False):
-    simul_data = pd.read_csv("../data/msprime_admix_results_2019-10-22T19:41:30.csv.gz")
-    alpha_list = simul_data.alpha.unique()
-    alpha_ref = alpha_list[-1]
-
-    Na = simul_data.Na.unique()[0]
-    simul_data["tajima_d_pop_c"] = (
-        simul_data.mean_nucleotide_div_pop_c - simul_data.mean_num_seg_sites_pop_c
-    )
-
-    n = 2 * simul_data.num_samples.unique()[0]
-    cte = sum(1.0 / np.arange(1, n))
-
-    simul_data["tajima_d_pop_a"] = (
-        simul_data.mean_nucleotide_div_pop_a * (n / (n - 1))
-        - simul_data.mean_num_seg_sites_pop_a / cte
-    )
-
-    simul_data["tajima_d_pop_c"] = (
-        simul_data.mean_nucleotide_div_pop_c * (n / (n - 1))
-        - simul_data.mean_num_seg_sites_pop_c / cte
-    )
-
-    # simul_data.loc[:5, ["mean_nucleotide_div_pop_c", "mean_num_seg_sites_pop_c", "tajima_d_pop_c"]]
-
-    for alpha_ref in alpha_list:
-        try:
-            contour_stats(simul_data, alpha_ref, stat="mean_nucleotide_div", showfig=showfig)
-            lines_stats(simul_data, alpha_ref, stat="mean_nucleotide_div", showfig=showfig)
-        except:
-            None
-
-        try:
-            contour_stats(simul_data, alpha_ref, stat="mean_num_seg_sites", showfig=showfig)
-            reload(ctu)
-            lines_stats(simul_data, alpha_ref, stat="mean_num_seg_sites", showfig=showfig)
-        except:
-            None
-
-        try:
-            contour_stats(simul_data, alpha_ref, stat="tajima_d", showfig=showfig)
-            lines_stats(simul_data, alpha_ref, stat="tajima_d", showfig=showfig)
-        except:
-            None
-    pass
-
-
-if __name__ == "__main__":
-    showfig = True
-    main()
 
