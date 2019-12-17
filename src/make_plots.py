@@ -54,12 +54,13 @@ def main(showfig=False):
 if __name__ == "__main__":
     # main()
     showfig = True
-    simul_data = pd.read_csv("../data/msprime_admix_results_2019-11-22T17:25:51.csv.gz")
+    simul_data = pd.read_csv("../data/msprime_admix_results_2019-12-16T19:57:21.csv.gz")
     alpha_list = simul_data.alpha.unique()
     Na = simul_data.Na.unique()[0]
     n = simul_data.num_samples.unique()[0]
-    alpha_ref = alpha_list[4]
+    alpha_ref = alpha_list[1]
     reload(ctu)
     reload(apu)
     apu.lines_stats(simul_data, alpha_ref, stat="mean_num_seg_sites", showfig=showfig)
     apu.contour_stats(simul_data, alpha_ref, stat="mean_num_seg_sites", showfig=showfig)
+

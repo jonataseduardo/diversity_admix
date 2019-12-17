@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.special import comb
 
+gamma_cte = 0.577
+
 
 def ccomb(N, k):
     return np.exp(gammaln(N + 1) - gammaln(N - k + 1) - gammaln(k + 1))
@@ -44,37 +46,7 @@ def nlinages(n, N, T):
     return n / (n + (1 - n) * np.exp(-T / (2 * N)))
 
 
-def sites_fixed_after(t_div, na, nb, Na, Nb):
-    """
-    Calculate the number of sites the are fixed in both sorce populatins after 
-    
-    Arguments
-    ---------
-    t_div: Time interval in generations
-
-    n: initial (present) number of linages 
-
-    Na: effective population size of the constant size source
-
-    Nb: effective population size of the of the second source after the split
-
-    Returns
-    -------
-    branch_length: np.array
-    
-    """
-
-    na2 = na * (na - 1)
-    nb2 = nb * (nb - 1)
-    s_fixed_after = (
-        t_div
-        - 2 * Na * (1 - np.exp(-0.5 * na2 * t_div / Na)) / na2
-        - 2 * Nb * (1 - np.exp(-0.5 * nb2 * t_div / Nb)) / nb2
-    )
-    return s_fixed_after
-
-
-def nsites_pop_a(t_div, na, nb, Na, Nb, subtract_fixed=True):
+def nsites_pop_a(na, Na, exact=False):
     """
     number of seg sites in the source population of constant size in the demographic model.
 
@@ -82,33 +54,23 @@ def nsites_pop_a(t_div, na, nb, Na, Nb, subtract_fixed=True):
     ---------
     t_div: Time interval in generations
 
-    n: initial (present) number of linages 
+    na: initial (present) number of linages 
 
     Na: effective population size of the constant size source
-
-    Nb: effective population size of the of the second source after the split
-
-    subtract_fixed: boolean (default True), subtract the fixed sites on both source populations
 
     Returns
     -------
     branch_length: np.array
     
     """
-    # ns_a = nlinages(na, Na, t_div)
-    # sa_before = 2 * Na * np.log(ns_a)
-    # sa_after = branch_length(na, Na, t_div)
-    # if subtract_fixed:
-    #    sf_after = sites_fixed_after(t_div, na, nb, Na, Nb)
-    #    sa = sa_before + sa_after - sf_after
-    # else:
-    #    sa = sa_before + sa_after
-    # sa = 2 * Na * sum(1.0 / np.arange(1, na))
-    sa = 2 * Na * np.log(na)
+    if exact:
+        sa = 2 * Na * np.sum(1 / np.arange(1, na))
+    else:
+        sa = 2 * Na * (np.log(na) + gamma_cte)
     return sa
 
 
-def nsites_pop_b(t_div, na, nb, Na, Nb, subtract_fixed=True):
+def nsites_pop_b(t_div, nb, Na, Nb):
     """
     number of seg sites in the source population of constant size in the demographic model.
 
@@ -116,13 +78,11 @@ def nsites_pop_b(t_div, na, nb, Na, Nb, subtract_fixed=True):
     ---------
     t_div: Time interval in generations
 
-    n: initial (present) number of linages 
+    nb: initial (present) number of linages 
 
-    Na: effective population size of the constant size source
+    Nb: effective population size of pop a 
 
-    Nb: effective population size of the of the second source after the split
-
-    subtract_fixed: boolean (default True), subtract the fixed sites on both source populations
+    Nb: effective population size of pop b 
 
     Returns
     -------
@@ -130,17 +90,14 @@ def nsites_pop_b(t_div, na, nb, Na, Nb, subtract_fixed=True):
     
     """
     ns_b = nlinages(nb, Nb, t_div)
-    sb_before = 2 * Na * np.log(ns_b)
-    sb_after = branch_length(nb, Nb, t_div)
-    if subtract_fixed:
-        sf_after = sites_fixed_after(t_div, na, nb, Na, Nb)
-        sb = sb_before + sb_after - sf_after
-    else:
-        sb = sb_before + sb_after
+    sb_before = 2 * Na * (np.log(ns_b) + gamma_cte)
+    sb_after = branch_length(nb, Nb, t_div) - t_div
+    # sb_after = 2 * Nb * (np.log(nb) - np.log(ns_b))
+    sb = sb_before + sb_after
     return sb
 
 
-def nsites_2pop(t_div, na, nb, Na, Nb, subtract_fixed=True):
+def s_admix(t_div, na, nb, Na, Nb):
     """
     number of seg sites in the source population of constant size in the demographic model.
 
@@ -156,8 +113,6 @@ def nsites_2pop(t_div, na, nb, Na, Nb, subtract_fixed=True):
 
     Nb: effective population size of the of the second source after the split
 
-    subtract_fixed: boolean (default True), subtract the fixed sites on both source populations
-
     Returns
     -------
     branch_length: np.array
@@ -165,59 +120,13 @@ def nsites_2pop(t_div, na, nb, Na, Nb, subtract_fixed=True):
     """
     ns_a = nlinages(na, Na, t_div)
     ns_b = nlinages(nb, Nb, t_div)
-    s_before = 2 * Na * np.log(ns_a + ns_b)
+    s_before = 2 * Na * (np.log(ns_a + ns_b) + gamma_cte)
 
     sa_after = branch_length(na, Na, t_div)
     sb_after = branch_length(nb, Nb, t_div)
-    s_after = sa_after + sb_after
-    if subtract_fixed:
-        sf_after = sites_fixed_after(t_div, na, nb, Na, Nb)
-        sf_before = (1 / ns_a + 1 / ns_b) / comb(ns_a + ns_b, ns_a)
-        stotal = s_before + s_after - sf_before - sf_after
-    else:
-        stotal = s_before + s_after
-    return stotal
+    s_after = sa_after + sb_after - t_div
 
-
-def s_admix(t_div, na, nb, Na, Nb, subtract_fixed=True):
-    """
-    number of seg sites in the source population of constant size in the demographic model.
-
-    Arguments
-    ---------
-    t_div: Time interval in generations
-
-    na: initial (present) number of linages in pop a
-    
-    nb: initial (present) number of linages in pop b
-
-    Na: effective population size of the constant size source
-
-    Nb: effective population size of the of the second source after the split
-
-    subtract_fixed: boolean (default True), subtract the fixed sites on both source populations
-
-    Returns
-    -------
-    branch_length: np.array
-    
-    """
-    gamma_cte = 0.577
-    ns_a = nlinages(na, Na, t_div)
-    ns_b = nlinages(nb, Nb, t_div)
-    s_before = 2 * Na * np.log(ns_a + ns_b)
-
-    sa_after = branch_length(na, Na, t_div)
-    sb_after = branch_length(nb, Nb, t_div)
-    s_after = sa_after + sb_after
-    if subtract_fixed:
-        # sf_after = sites_fixed_after(t_div, na, nb, Na, Nb)
-        sf_before = 0
-        sf_after = t_div
-        # sf_before = (1 / ns_a + 1 / ns_b) / comb(ns_a + ns_b, ns_a)
-        stotal = s_before + s_after + sf_before - sf_after
-    else:
-        stotal = s_before + s_after
+    stotal = s_before + s_after
     return stotal
 
 
@@ -243,36 +152,11 @@ def s_admix_ratio(t_div, n, Na, Nb, alpha):
   num_linages: np.array
 
   """
-    Sadmix = s_admix(t_div, alpha * n, (1 - alpha) * n, Na, Nb, subtract_fixed=True)
-    Sa = nsites_pop_a(t_div, n, n, Na, Nb, subtract_fixed=True)
-    return Sadmix / Sa
-    # return 1e-4 * Sadmix
-
-
-# def s_admix_ratio(t_div, n, Na, Nb, alpha):
-#    """
-#   Ratio between the number of segregating sites of an admixed population
-#   and one of its source populations immediately after the admixture event.
-#
-#   Arguments
-#   ---------
-#   t_div: Time interval in generations
-#
-#   n: initial (present) number of linages
-#
-#   Na: effective population size of the focal source
-#
-#   Nb: effective population size of the non-focal source
-#
-#   alpha: proportion of the focal source population in the admixed population
-#
-#   Returns
-#   -------
-#   num_linages: np.array
-#
-#   """
-#    t1 = np.ones(len(t_div))
-#    return 1e-4 * 2 * Na * np.sum(1 / np.arange(1, n)) * t1
+    Sadmix = s_admix(t_div, alpha * n, (1 - alpha) * n, Na, Nb)
+    Sa = nsites_pop_a(n, Na, exact=False)
+    Sb = nsites_pop_b(t_div, n, Na, Nb)
+    return 1e-4 * Sb
+    # return Sadmix / Sa
 
 
 def admix_coal_time_ratio(t_div, alpha, kappa):
