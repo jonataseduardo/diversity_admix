@@ -129,10 +129,10 @@ def lines_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=Tru
         n = data.num_samples.unique()
 
         def get_val(Nb_ref):
-            h = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_b"].values
-            # h2 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_a"].values
-            # h1 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_c"].values
-            # h = h1 / h2
+            # h = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_b"].values
+            h2 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_a"].values
+            h1 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_c"].values
+            h = h1 / h2
             return h
 
         h_simul_list = [list(zip(t_coal, get_val(Nb_ref))) for Nb_ref in Nb_list]

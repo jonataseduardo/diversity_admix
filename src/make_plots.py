@@ -64,3 +64,4 @@ if __name__ == "__main__":
     apu.lines_stats(simul_data, alpha_ref, stat="mean_num_seg_sites", showfig=showfig)
     apu.contour_stats(simul_data, alpha_ref, stat="mean_num_seg_sites", showfig=showfig)
 
+

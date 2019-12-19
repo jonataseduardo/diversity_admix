@@ -155,8 +155,8 @@ def s_admix_ratio(t_div, n, Na, Nb, alpha):
     Sadmix = s_admix(t_div, alpha * n, (1 - alpha) * n, Na, Nb)
     Sa = nsites_pop_a(n, Na, exact=False)
     Sb = nsites_pop_b(t_div, n, Na, Nb)
-    return 1e-4 * Sb
-    # return Sadmix / Sa
+    # return 1e-4 * Sb
+    return Sadmix / Sa
 
 
 def admix_coal_time_ratio(t_div, alpha, kappa):
