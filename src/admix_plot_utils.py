@@ -129,11 +129,9 @@ def lines_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=Tru
         n = data.num_samples.unique()
 
         def get_val(Nb_ref):
-            # h1 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_b"].values
-            # h2 = data[data.Nb == Nb_ref].loc[:, "mean_branch_length_pop_b"].values
-            h1 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_c"].values
+            # h = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_b"].values
             h2 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_a"].values
-            # return h2 / h1
+            h1 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_c"].values
             h = h1 / h2
             return h
 
@@ -206,7 +204,6 @@ def contour_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=T
     Na = simul_data.Na.unique()
     psize = len(t_div_list), len(Nb_list)
     data = simul_data[simul_data.alpha == alpha_ref]
-
     x = data.t_div.values.reshape(psize) / (2 * Na)
     y = data.Nb.values.reshape(psize) / Na
 
@@ -240,10 +237,7 @@ def contour_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=T
         res = data.loc[:, "tajima_d_pop_c"].values
         z = res.reshape(psize)
         lr = 0
-        # reload(ctu)
         z_th = ctu.tajima_d_admix((2 * Na) * x, n, Na, Na * y, alpha_ref)
-        # z_th.max()
-        # z_th.min()
         s_label = r""
         figname = "../figures/contour_tajimas_d_admix_alpha-{}.png".format(alpha_ref)
         midpoint = 0
