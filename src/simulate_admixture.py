@@ -121,8 +121,7 @@ def main(test=True, num_samples=1000, n_jobs=2):
 
 
 if __name__ == "__main__":
-    reload(csu)
-    output = main(test=True)
-    output.mean_num_seg_sites_pop_a
-    main(test=False, num_samples=100, n_jobs=90)
+    #output = main(test=True)
+    output_main2 = main(test=False, num_samples=1000, n_jobs=120)
+
 
