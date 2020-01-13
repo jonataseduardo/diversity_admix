@@ -19,7 +19,7 @@ def set_cmap_levels(max_value, min_value, midpoint=1, digits=1, nticks=15):
         min_value = min_value - min_value % wd
         max_value = max_value - max_value % wd + wd
         lower_levels = np.arange(round(min_value, digits), midpoint, wd)
-        upper_levels = np.arange(midpoint, round(max_value, digits), wd)
+        upper_levels = np.arange(midpoint, round(max_value, digits) + wd, wd)
     else:
         upper_nticks = int(round(nticks * (max_value - midpoint) / (max_value - min_value)))
         lower_nticks = int(round(nticks * (midpoint - min_value) / (max_value - min_value)))
