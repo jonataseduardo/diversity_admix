@@ -160,6 +160,32 @@ def lines_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=Tru
         y_label = r"$\hat{\theta}_{\pi_A} - \hat{\theta}_{S_A}}$"
         lr = 90
         figname = "../figures/lines_tajimas_d_admix_alpha-{}.png".format(alpha_ref)
+    elif stat == "prop_diff":
+        n = data.num_samples.unique()
+
+        def get_val(Nb_ref):
+            h1 = data[data.Nb == Nb_ref].loc[:, "mean_nucleotide_div_pop_a"].values
+            h2 = data[data.Nb == Nb_ref].loc[:, "mean_nucleotide_div_pop_c"].values
+            s1 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_a"].values
+            s2 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_c"].values
+            s = h2 / h1
+            h = s2 / s1
+            return s - h
+
+        h_simul_list = [list(zip(t_coal, get_val(Nb_ref))) for Nb_ref in Nb_list]
+        h_theory_list = [
+            list(
+                zip(
+                    t_coal,
+                    ctu.admix_coal_time_ratio(t_coal, alpha_ref, Nb_ref / Na)
+                    - ctu.s_admix_ratio((2 * Na) * t_coal, n, 2 * Na, 2 * Nb_ref, alpha_ref),
+                )
+            )
+            for Nb_ref in Nb_list
+        ]
+        y_label = r"$\frac{\pi_A}{\pi_0} - \frac{S_A}{S_0}$"
+        lr = 90
+        figname = "../figures/lines_prop_diff_alpha-{}.png".format(alpha_ref)
 
     cmap = plt.get_cmap("Spectral")
 
@@ -174,9 +200,9 @@ def lines_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=Tru
     ax = fig.add_subplot(1, 1, 1)
     ax.set_xlim((0, 1))
     ax.set_ylim((0.9 * y_min, 1.1 * y_max))
-    ax.set_title(r"$\alpha={{{}}}$".format(alpha_ref))
+    ax.set_title(r"$\alpha={{{}}}$".format(alpha_ref), size=16)
     ax.set_xlabel(r"$\mathrm{time} \, (2 N_0 \, \mathrm{coalescent \, units})$", size=16)
-    ax.set_ylabel(y_label, rotation=lr, size=18, labelpad=10)
+    ax.set_ylabel(y_label, rotation=lr, size=20, labelpad=10)
     line_segments_simul = LineCollection(
         h_simul_list, linewidths=1.5, linestyles="solid", cmap=cmap
     )
@@ -188,7 +214,7 @@ def lines_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=Tru
     ax.add_collection(line_segments_theory)
     line_segments_theory.set_array(Nb_list / Na)
     axcb = fig.colorbar(line_segments_simul)
-    axcb.set_label(r"$\frac{N_1}{N_0}$", rotation=0, size=18, labelpad=10)
+    axcb.set_label(r"$\frac{N_1}{N_0}$", rotation=0, size=20, labelpad=12)
 
     fig.tight_layout()
     if savefig:
@@ -254,9 +280,9 @@ def contour_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=T
 
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
-    ax.set_title(r"$\alpha={{{}}}$".format(alpha_ref))
+    ax.set_title(r"$\alpha={{{}}}$".format(alpha_ref), size=16)
     ax.set_xlabel(r"split time ($2 N_a$  coalescent units)", size=16)
-    ax.set_ylabel(r"$\frac{N_1}{N_0}$", size=16, rotation=0, labelpad=10)
+    ax.set_ylabel(r"$\frac{N_1}{N_0}$", size=20, rotation=0, labelpad=10)
     ax.set_xlim((x.min(), x.max()))
     ax.set_ylim((y.min(), y.max()))
     ct = ax.contourf(x, y, z, levels=cmap_levels, cmap=cmap, norm=norm)
@@ -264,9 +290,8 @@ def contour_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=T
         ct_th = ax.contour(x, y, z_th, levels=cmap_levels, colors="black", linestyles="dashed")
         ax.clabel(ct_th, cmap_ticks, inline=True, fmt=f"%.1f", fontsize=10)
     axcb = fig.colorbar(ct)
-    axcb.set_label(s_label, size=16, rotation=lr, labelpad=10)
+    axcb.set_label(s_label, size=20, rotation=lr, labelpad=12)
     axcb.set_ticks(cmap_ticks)
-
     fig.tight_layout()
     if savefig:
         fig.savefig(figname)
