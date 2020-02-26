@@ -65,23 +65,31 @@ def run_admix(
     return output.reshape(-1)
 
 
-def main(test=True, num_samples=1000, n_jobs=2):
+def main(simul_type='test' , num_samples=1000, n_jobs=2):
     """TODO: Docstring for main.
     :returns: TODO
 
     """
-    if test:
+    if simul_type is 'test' :
         Na = 1e4
         t_div_list = np.linspace(0, 2 * Na, 3)[1:]
         Nb_list = np.linspace(0, Na, 2)[1:]
         alpha_list = np.arange(1, 4, 5) / 10.0
         t_div_list / (2 * Na)
         num_samples = 20
-    else:
+    if simul_type is 'long':
         Na = 1e4
         t_div_list = np.linspace(0, 2 * Na, 41)[1:]
         Nb_list = np.linspace(0, Na, 21)[1:]
         alpha_list = np.arange(1, 10, 1) / 10.0
+        t_div_list / (2 * Na)
+        num_samples = num_samples
+    if simul_type is 'fine_alpha':
+        Na = 1e4
+        t_div_list = np.linspace(0, 2 * Na, 41)[1:]
+        #Nb_list = np.linspace(0, Na, 21)[1:]
+        Nb_list = [0.7 * Na]
+        alpha_list = np.linspace(0,1,41)[1:]
         t_div_list / (2 * Na)
         num_samples = num_samples
 
@@ -115,13 +123,13 @@ def main(test=True, num_samples=1000, n_jobs=2):
     columns = ["t_div", "num_samples", "Na", "Nb", "alpha"] + columns
 
     output = pd.DataFrame(pout, columns=columns)
-    output.to_csv("../data/msprime_admix_results_{}.csv.gz".format(time_stamp))
+    output.to_csv("../data/results_{}_{}.csv.gz".format(simul_type, time_stamp))
 
     return output
 
-
 if __name__ == "__main__":
-    #output = main(test=True)
-    output_main2 = main(test=False, num_samples=1000, n_jobs=120)
+    output_test = main(simul_type = "test")
+    output_1 = main(simul_type = "long", num_samples=100, n_jobs=120)
+    output_2 = main(simul_type = "fine_alpha", num_samples=100, n_jobs=120)
 
 
