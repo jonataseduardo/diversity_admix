@@ -8,6 +8,8 @@ from matplotlib import cbook
 from matplotlib.colors import Normalize
 from matplotlib.cm import ScalarMappable
 from numpy import polyfit
+from itertools import product
+from mpl_toolkits.axes_grid1 import ImageGrid
 
 
 def set_cmap_levels(max_value, min_value, midpoint=1, digits=1, nticks=15):
@@ -203,6 +205,7 @@ def lines_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=Tru
     ax.set_title(r"$\alpha={{{}}}$".format(alpha_ref), size=16)
     ax.set_xlabel(r"$\mathrm{time} \, (2 N_0 \, \mathrm{coalescent \, units})$", size=16)
     ax.set_ylabel(y_label, rotation=lr, size=20, labelpad=10)
+    ax.plot(np.linspace(0, 1, 20), np.ones(20), color="black", linestyle="dotted", linewidth=1.5)
     line_segments_simul = LineCollection(
         h_simul_list, linewidths=1.5, linestyles="solid", cmap=cmap
     )
@@ -217,6 +220,109 @@ def lines_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=Tru
     axcb.set_label(r"$\frac{N_1}{N_0}$", rotation=0, size=20, labelpad=12)
 
     fig.tight_layout()
+    if savefig:
+        fig.savefig(figname)
+    if showfig:
+        fig.show()
+
+
+def multi_lines(simul_data, alpha_list, stat, digits=2, savefig=True, showfig=True):
+    alpha_list = [0.2, 0.5, 0.8]
+    Nb_list = simul_data.Nb.unique()[::2]
+    t_div_list = simul_data.t_div.unique()
+    Na = simul_data.Na.unique()
+    t_coal = t_div_list / (2 * Na)
+
+    def get_stat(alpha_ref, stat):
+        data = simul_data[simul_data.alpha == alpha_ref].copy()
+
+        if stat == "mean_nucleotide_div":
+
+            def get_val(Nb_ref):
+                h1 = data[data.Nb == Nb_ref].loc[:, "mean_nucleotide_div_pop_a"].values
+                h2 = data[data.Nb == Nb_ref].loc[:, "mean_nucleotide_div_pop_c"].values
+                return h2 / h1
+
+            h_simul_list = [list(zip(t_coal, get_val(Nb_ref))) for Nb_ref in Nb_list]
+            h_theory_list = [
+                list(zip(t_coal, ctu.admix_coal_time_ratio(t_coal, alpha_ref, Nb_ref / Na)))
+                for Nb_ref in Nb_list
+            ]
+            y_label = r"$\frac{\pi_A}{\pi_0}$"
+
+        elif stat == "mean_num_seg_sites":
+            n = data.num_samples.unique()
+
+            def get_val(Nb_ref):
+                # h = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_b"].values
+                h2 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_a"].values
+                h1 = data[data.Nb == Nb_ref].loc[:, "mean_num_seg_sites_pop_c"].values
+                h = h1 / h2
+                return h
+
+            h_simul_list = [list(zip(t_coal, get_val(Nb_ref))) for Nb_ref in Nb_list]
+            h_theory_list = [
+                list(
+                    zip(
+                        t_coal,
+                        ctu.s_admix_ratio((2 * Na) * t_coal, n, 2 * Na, 2 * Nb_ref, alpha_ref),
+                    )
+                )
+                for Nb_ref in Nb_list
+            ]
+            y_label = r"$\frac{S_A}{S_0}$"
+        return (h_simul_list, h_theory_list, y_label)
+
+    cmap = plt.get_cmap("Spectral")
+    # fig, ax = plt.subplots(2, 3, sharex = True, sharey=True)
+    fig = plt.figure()
+    ax = ImageGrid(
+        fig,
+        111,
+        nrows_ncols=(2, 3),
+        direction="row",
+        axes_pad=0.05,
+        add_all=True,
+        label_mode="L",
+        share_all=True,
+        cbar_location="right",
+        cbar_mode="single",
+        cbar_size="5%",
+        cbar_pad=0.05,
+    )
+
+    # ax.set_xlim((0, 1))
+    # ax.set_ylim((0.9 * y_min, 1.1 * y_max))
+    # ax.set_title(r"$\alpha={{{}}}$".format(alpha_ref), size=16)
+    # ax.set_xlabel(r"$\mathrm{time} \, (2 n_0 \, \mathrm{coalescent \, units})$", size=16)
+    # ax.set_ylabel(y_label, rotation=lr, size=20, labelpad=10)
+
+    stat_list = ["mean_nucleotide_div", "mean_num_seg_sites"]
+    for ax_id, (stat, alpha_ref) in enumerate(product(stat_list, alpha_list)):
+
+        ax[ax_id].plot(
+            np.linspace(0, 1, 20), np.ones(20), color="black", linestyle="dotted", linewidth=1.5
+        )
+        simul_data_list, theory_data_list, y_label = get_stat(alpha_ref, stat)
+        line_segments_simul = LineCollection(
+            simul_data_list, linewidths=1.5, linestyles="solid", cmap=cmap
+        )
+        line_segments_simul.set_array(Nb_list / Na)
+        ax[ax_id].add_collection(line_segments_simul)
+        line_segments_theory = LineCollection(
+            theory_data_list, linewidths=1.3, linestyles="dashed", cmap=cmap
+        )
+        im = ax[ax_id].add_collection(line_segments_theory)
+        line_segments_theory.set_array(Nb_list / Na)
+
+    cbar = ax[ax_id].cax.colorbar(im)
+    ax[ax_id].cax.toggle_label(im)
+
+    # axcb = fig.colorbar(ax[0])
+    cbar.ax.set_label(r"$\frac{N_1}{N_0}$")
+    fig.show()
+
+    # fig.tight_layout()
     if savefig:
         fig.savefig(figname)
     if showfig:
