@@ -226,8 +226,7 @@ def lines_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=Tru
         fig.show()
 
 
-def multi_lines(simul_data, alpha_list, stat, digits=2, savefig=True, showfig=True):
-    alpha_list = [0.2, 0.5, 0.8]
+def multi_lines(simul_data, alpha_list=[0.2, 0.5, 0.8], savefig=True, showfig=True):
     Nb_list = simul_data.Nb.unique()[::2]
     t_div_list = simul_data.t_div.unique()
     Na = simul_data.Na.unique()
@@ -274,12 +273,12 @@ def multi_lines(simul_data, alpha_list, stat, digits=2, savefig=True, showfig=Tr
         return (h_simul_list, h_theory_list, y_label)
 
     cmap = plt.get_cmap("Spectral")
-    # fig, ax = plt.subplots(2, 3, sharex = True, sharey=True)
     fig = plt.figure()
-    ax = ImageGrid(
+    grid = ImageGrid(
         fig,
-        111,
+        (0.1, 0.12, 0.8, 0.8),
         nrows_ncols=(2, 3),
+        aspect=1,
         direction="row",
         axes_pad=0.05,
         add_all=True,
@@ -291,16 +290,18 @@ def multi_lines(simul_data, alpha_list, stat, digits=2, savefig=True, showfig=Tr
         cbar_pad=0.05,
     )
 
-    # ax.set_xlim((0, 1))
-    # ax.set_ylim((0.9 * y_min, 1.1 * y_max))
-    # ax.set_title(r"$\alpha={{{}}}$".format(alpha_ref), size=16)
-    # ax.set_xlabel(r"$\mathrm{time} \, (2 n_0 \, \mathrm{coalescent \, units})$", size=16)
-    # ax.set_ylabel(y_label, rotation=lr, size=20, labelpad=10)
-
     stat_list = ["mean_nucleotide_div", "mean_num_seg_sites"]
     for ax_id, (stat, alpha_ref) in enumerate(product(stat_list, alpha_list)):
 
-        ax[ax_id].plot(
+        ax = grid[ax_id]
+        ax.tick_params(labelsize=12)
+        ax.set_xticks([0, 0.5, 1])
+        ax.set_xticklabels(["0", "0.5", "1"])
+
+        if ax_id <= 2:
+            ax.set_title(r"$\alpha={{{}}}$".format(alpha_ref), size=16)
+
+        ax.plot(
             np.linspace(0, 1, 20), np.ones(20), color="black", linestyle="dotted", linewidth=1.5
         )
         simul_data_list, theory_data_list, y_label = get_stat(alpha_ref, stat)
@@ -308,22 +309,24 @@ def multi_lines(simul_data, alpha_list, stat, digits=2, savefig=True, showfig=Tr
             simul_data_list, linewidths=1.5, linestyles="solid", cmap=cmap
         )
         line_segments_simul.set_array(Nb_list / Na)
-        ax[ax_id].add_collection(line_segments_simul)
+        ax.add_collection(line_segments_simul)
         line_segments_theory = LineCollection(
             theory_data_list, linewidths=1.3, linestyles="dashed", cmap=cmap
         )
-        im = ax[ax_id].add_collection(line_segments_theory)
+        im = ax.add_collection(line_segments_theory)
         line_segments_theory.set_array(Nb_list / Na)
 
-    cbar = ax[ax_id].cax.colorbar(im)
-    ax[ax_id].cax.toggle_label(im)
+        if ax_id == 0 or ax_id == 3:
+            ax.set_ylabel(y_label, rotation=0, size=20, labelpad=10)
 
-    # axcb = fig.colorbar(ax[0])
-    cbar.ax.set_label(r"$\frac{N_1}{N_0}$")
-    fig.show()
+    grid[4].set_xlabel(r"$\mathrm{time} \, (2 N_0 \, \mathrm{coalescent \, units})$", size=16)
+    cbar = ax.cax.colorbar(im)
+    cbar.set_label_text(r"$\frac{N_1}{N_0}$", size=20, rotation=0)
+    cbar.ax.xaxis.set_label_coords(-1, -1)
+    cbar.ax.tick_params(labelsize=12, rotation=-30, length=3, pad=3)
 
-    # fig.tight_layout()
     if savefig:
+        figname = "../figures/multi_lines.pdf"
         fig.savefig(figname)
     if showfig:
         fig.show()
