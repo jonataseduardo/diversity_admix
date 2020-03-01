@@ -34,9 +34,7 @@ def make_alpha_fst_plot(savefig=True, showfig=False):
     pass
 
 
-def main(showfig=False):
-    # simul_data = pd.read_csv("../data/msprime_admix_results_2019-11-22T17:25:51.csv.gz")
-    simul_data = pd.read_csv("../data/msprime_admix_results_2019-12-16T19:57:21.csv.gz")
+def single_plots_simul(simul_data, showfig=False):
     alpha_list = simul_data.alpha.unique()
     alpha_ref = alpha_list[-1]
 
@@ -57,20 +55,17 @@ def main(showfig=False):
 
 
 if __name__ == "__main__":
-    main()
+    single_plots_simul(simul_data)
     make_alpha_fst_plot(savefig=True, showfig=True)
 
-    # showfig = True
-    # simul_data = pd.read_csv("../data/msprime_admix_results_2019-12-16T19:57:21.csv.gz")
-    # alpha_list = simul_data.alpha.unique()
-    # Na = simul_data.Na.unique()[0]
-    # n = simul_data.num_samples.unique()[0]
-    # alpha_ref = alpha_list[-2]
-    # reload(ctu)
-    # reload(apu)
-    # apu.lines_stats(simul_data, alpha_ref, stat="prop_diff", showfig=showfig)
+    showfig = True
+    simul_data = pd.read_csv("../data/results_long_2020-02-26T16:45:24.csv.gz")
 
-    # apu.lines_stats(simul_data, alpha_ref, stat="mean_num_seg_sites", showfig=showfig)
+    alpha_ref = 0.2
+    apu.lines_stats(simul_data, alpha_ref, stat="mean_num_seg_sites", showfig=showfig)
+    apu.contour_stats(simul_data, alpha_ref, stat="mean_num_seg_sites", showfig=showfig)
 
-    # apu.contour_stats(simul_data, alpha_ref, stat="mean_num_seg_sites", showfig=showfig)
-# apu.contour_stats(simul_data, alpha_ref, stat="mean_nucleotide_div", showfig=showfig)
+    reload(apu)
+    apu.multi_lines(simul_data)
+
+
