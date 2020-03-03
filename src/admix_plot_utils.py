@@ -20,6 +20,18 @@ def my_floor(a, precision=0):
     return np.round(a - 0.5 * 10 ** (-precision), precision)
 
 
+def add_inner_title(ax, title, loc, size=None, **kwargs):
+    from matplotlib.offsetbox import AnchoredText
+    from matplotlib.patheffects import withStroke
+
+    if size is None:
+        size = dict(size=plt.rcParams["legend.fontsize"])
+    at = AnchoredText(title, loc=loc, prop=size, pad=0.0, borderpad=0.5, frameon=False, **kwargs)
+    ax.add_artist(at)
+    at.txt._text.set_path_effects([withStroke(foreground="w", linewidth=3)])
+    return at
+
+
 class MidPointNorm(Normalize):
     # Normalizing colormap solition was given in
     # https://stackoverflow.com/a/7404116/
@@ -308,6 +320,11 @@ def multi_lines(simul_data, alpha_list=[0.2, 0.5, 0.8], savefig=True, showfig=Tr
     cbar.ax.xaxis.set_label_coords(-1, -1)
     cbar.ax.tick_params(labelsize=12, rotation=-30, length=3, pad=3)
 
+    for ax, im_title in zip(grid, ["(a)", "(b)", "(c)", "(d)", "(e)", "(f)"]):
+        t = add_inner_title(ax, im_title, loc=2)
+        t.patch.set_ec("none")
+        t.patch.set_alpha(0.5)
+
     if savefig:
         figname = "../figures/multi_lines.pdf"
         fig.savefig(figname)
@@ -408,7 +425,7 @@ def multi_contour(simul_data, alpha_list=[0.2, 0.5, 0.8], savefig=True, showfig=
             h2 = data.loc[:, "mean_nucleotide_div_pop_c"].values
             z = (h2 / h1).reshape(psize)
             z_th = ctu.admix_coal_time_ratio(x, alpha_ref, y)
-            s_label = r"$\frac{\pi_A}{\pi_0}$"
+            s_label = r"   $\frac{\pi_A}{\pi_0}$"
 
         elif stat == "mean_num_seg_sites":
             h1 = data.loc[:, "mean_num_seg_sites_pop_a"].values
@@ -416,7 +433,7 @@ def multi_contour(simul_data, alpha_list=[0.2, 0.5, 0.8], savefig=True, showfig=
             z = (h2 / h1).reshape(psize)
             n = data.num_samples.unique()
             z_th = ctu.s_admix_ratio((2 * Na) * x, n, 2 * Na, 2 * Na * y, alpha_ref)
-            s_label = r"$\frac{S_A}{S_0}$"
+            s_label = r"   $\frac{S_A}{S_0}$"
 
         return (x, y, z, z_th, s_label)
 
@@ -451,7 +468,7 @@ def multi_contour(simul_data, alpha_list=[0.2, 0.5, 0.8], savefig=True, showfig=
         )
 
         for ax_id, alpha_ref in enumerate(alpha_list):
-            x, y, z, z_th, s_label = get_stat(alpha_ref, stat)
+            x, y, z, z_th, cbar_label = get_stat(alpha_ref, stat)
             ax = grid[ax_id]
             ax.tick_params(labelsize=12)
             ax.set_xticks([0, 0.5, 1])
@@ -460,9 +477,7 @@ def multi_contour(simul_data, alpha_list=[0.2, 0.5, 0.8], savefig=True, showfig=
 
             if stat is "mean_nucleotide_div":
                 ax.set_title(r"$\alpha={{{}}}$".format(alpha_ref), size=16)
-                cbar_label = r"   $\frac{\pi_A}{\pi_0}$"
             if stat is "mean_num_seg_sites":
-                cbar_label = r"   $\frac{S_A}{S_0}$"
                 if ax_id == 1:
                     ax.set_xlabel(r"split time ($2 N_0$  coalescent units)", size=16)
 
@@ -473,9 +488,20 @@ def multi_contour(simul_data, alpha_list=[0.2, 0.5, 0.8], savefig=True, showfig=
 
         cbar = ax.cax.colorbar(ct, ticks=cmap_ticks)
         cbar.set_label_text(cbar_label, size=20, rotation=0)
+        return grid
 
-    make_grid("mean_nucleotide_div", 211)
-    make_grid("mean_num_seg_sites", 212)
+    grid1 = make_grid("mean_nucleotide_div", 211)
+    grid2 = make_grid("mean_num_seg_sites", 212)
+
+    for ax, im_title in zip(grid1, ["(a)", "(b)", "(c)"]):
+        t = add_inner_title(ax, im_title, loc=2)
+        t.patch.set_ec("none")
+        t.patch.set_alpha(0.5)
+
+    for ax, im_title in zip(grid2, ["(d)", "(e)", "(f)"]):
+        t = add_inner_title(ax, im_title, loc=2)
+        t.patch.set_ec("none")
+        t.patch.set_alpha(0.5)
 
     if savefig:
         figname = "../figures/multi_contour.pdf"
