@@ -12,29 +12,12 @@ from itertools import product
 from mpl_toolkits.axes_grid1 import ImageGrid
 
 
-def set_cmap_levels(max_value, min_value, midpoint=1, digits=1, nticks=15):
-    if midpoint < min_value:
-        midpoint = min_value
+def my_ceil(a, precision=0):
+    return np.round(a + 0.5 * 10 ** (-precision), precision)
 
-    if digits <= 2:
-        wd = (5 ** ((digits + 1) % 2)) * (1 / 10 ** digits)
-        min_value = min_value - min_value % wd
-        max_value = max_value - max_value % wd + wd
-        lower_levels = np.arange(round(min_value, digits), midpoint, wd)
-        upper_levels = np.arange(midpoint, round(max_value, digits) + wd, wd)
-    else:
-        upper_nticks = int(round(nticks * (max_value - midpoint) / (max_value - min_value)))
-        lower_nticks = int(round(nticks * (midpoint - min_value) / (max_value - min_value)))
-        lower_levels = np.round(np.linspace(min_value, midpoint, lower_nticks), decimals=2)
-        upper_levels = np.round(
-            np.linspace(midpoint, max_value, upper_nticks, endpoint=True), decimals=2
-        )
 
-    lower_ticks = lower_levels[::-1][1::2][::-1]
-    upper_ticks = upper_levels[0::2]
-    levels = np.hstack((lower_levels, upper_levels))
-    ticks = np.hstack((lower_ticks, upper_ticks))
-    return (np.unique(levels), np.unique(ticks))
+def my_floor(a, precision=0):
+    return np.round(a - 0.5 * 10 ** (-precision), precision)
 
 
 class MidPointNorm(Normalize):
@@ -390,7 +373,7 @@ def contour_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=T
     fig = plt.figure()
     ax = fig.add_subplot(1, 1, 1)
     ax.set_title(r"$\alpha={{{}}}$".format(alpha_ref), size=16)
-    ax.set_xlabel(r"split time ($2 N_a$  coalescent units)", size=16)
+    ax.set_xlabel(r"split time ($2 N_0$  coalescent units)", size=16)
     ax.set_ylabel(r"$\frac{N_1}{N_0}$", size=20, rotation=0, labelpad=10)
     ax.set_xlim((x.min(), x.max()))
     ax.set_ylim((y.min(), y.max()))
@@ -408,3 +391,94 @@ def contour_stats(simul_data, alpha_ref, stat, digits=2, savefig=True, showfig=T
         fig.show()
     pass
 
+
+def multi_contour(simul_data, alpha_list=[0.2, 0.5, 0.8], savefig=True, showfig=True):
+    Nb_list = simul_data.Nb.unique()
+    t_div_list = simul_data.t_div.unique()
+    Na = simul_data.Na.unique()
+    psize = len(t_div_list), len(Nb_list)
+
+    def get_stat(alpha_ref, stat):
+        data = simul_data[simul_data.alpha == alpha_ref]
+        x = data.t_div.values.reshape(psize) / (2 * Na)
+        y = data.Nb.values.reshape(psize) / Na
+
+        if stat == "mean_nucleotide_div":
+            h1 = data.loc[:, "mean_nucleotide_div_pop_a"].values
+            h2 = data.loc[:, "mean_nucleotide_div_pop_c"].values
+            z = (h2 / h1).reshape(psize)
+            z_th = ctu.admix_coal_time_ratio(x, alpha_ref, y)
+            s_label = r"$\frac{\pi_A}{\pi_0}$"
+
+        elif stat == "mean_num_seg_sites":
+            h1 = data.loc[:, "mean_num_seg_sites_pop_a"].values
+            h2 = data.loc[:, "mean_num_seg_sites_pop_c"].values
+            z = (h2 / h1).reshape(psize)
+            n = data.num_samples.unique()
+            z_th = ctu.s_admix_ratio((2 * Na) * x, n, 2 * Na, 2 * Na * y, alpha_ref)
+            s_label = r"$\frac{S_A}{S_0}$"
+
+        return (x, y, z, z_th, s_label)
+
+    cmap = plt.get_cmap("bwr")
+    fig = plt.figure()
+
+    def make_grid(stat, rect, digits=1, nticks=4):
+        midpoint = 1
+        norm = MidPointNorm(midpoint=midpoint)
+        data_aux = simul_data[simul_data.alpha.isin(alpha_list)]
+        aux = data_aux.loc[:, stat + "_pop_c"] / data_aux.loc[:, stat + "_pop_a"]
+        z_max = my_ceil(aux.max(), precision=digits)
+        z_min = my_floor(aux.min(), precision=digits)
+        cmap_levels, cmap_ticks = set_cmap_levels(
+            z_max, z_min, midpoint=midpoint, digits=digits, nticks=nticks
+        )
+
+        grid = ImageGrid(
+            fig,
+            rect,
+            nrows_ncols=(1, 3),
+            aspect=1,
+            direction="row",
+            axes_pad=0.08,
+            add_all=True,
+            label_mode="L",
+            share_all=True,
+            cbar_location="right",
+            cbar_mode="single",
+            cbar_size="5%",
+            cbar_pad=0.05,
+        )
+
+        for ax_id, alpha_ref in enumerate(alpha_list):
+            x, y, z, z_th, s_label = get_stat(alpha_ref, stat)
+            ax = grid[ax_id]
+            ax.tick_params(labelsize=12)
+            ax.set_xticks([0, 0.5, 1])
+            ax.set_xticklabels(["  0", "0.5", "1  "])
+            ax.set_xlim((0, 1))
+
+            if stat is "mean_nucleotide_div":
+                ax.set_title(r"$\alpha={{{}}}$".format(alpha_ref), size=16)
+                cbar_label = r"   $\frac{\pi_A}{\pi_0}$"
+            if stat is "mean_num_seg_sites":
+                cbar_label = r"   $\frac{S_A}{S_0}$"
+                if ax_id == 1:
+                    ax.set_xlabel(r"split time ($2 N_0$  coalescent units)", size=16)
+
+            ax.set_ylabel(r"$\frac{N_1}{N_0}$", size=20, rotation=0, labelpad=10)
+            ct = ax.contourf(x, y, z, levels=cmap_levels, cmap=cmap, norm=norm)
+            ct_th = ax.contour(x, y, z_th, levels=cmap_levels, colors="black", linestyles="dashed")
+            ax.clabel(ct_th, cmap_ticks, inline=True, fmt=f"%.1f", fontsize=10)
+
+        cbar = ax.cax.colorbar(ct, ticks=cmap_ticks)
+        cbar.set_label_text(cbar_label, size=20, rotation=0)
+
+    make_grid("mean_nucleotide_div", 211)
+    make_grid("mean_num_seg_sites", 212)
+
+    if savefig:
+        figname = "../figures/multi_contour.pdf"
+        fig.savefig(figname)
+    if showfig:
+        fig.show()
