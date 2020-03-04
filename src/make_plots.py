@@ -55,17 +55,19 @@ def single_plots_simul(simul_data, showfig=False):
 
 
 if __name__ == "__main__":
+
+    simul_data = pd.read_csv("../data/results_long_2020-02-26T16:45:24.csv.gz")
     single_plots_simul(simul_data)
     make_alpha_fst_plot(savefig=True, showfig=True)
-
-    showfig = True
-    simul_data = pd.read_csv("../data/results_long_2020-02-26T16:45:24.csv.gz")
-
-    alpha_ref = 0.2
-    apu.lines_stats(simul_data, alpha_ref, stat="mean_num_seg_sites", showfig=showfig)
-    apu.contour_stats(simul_data, alpha_ref, stat="mean_num_seg_sites", showfig=showfig)
-
-    reload(apu)
+    apu.multi_contour(simul_data)
     apu.multi_lines(simul_data)
 
+    # apu.lines_stats(simul_data, alpha_ref, stat="mean_num_seg_sites", showfig=True)
+    # apu.contour_stats(simul_data, alpha_ref, stat="mean_num_seg_sites", showfig=True)
+
+    simul_data_alpha = pd.read_csv("../data/results_fine_alpha_2020-03-03T22:33:58.csv.gz")
+    reload(apu)
+    apu.multi_alpha(simul_data_alpha)
+    apu.alpha_contour(simul_data_alpha)
+    simul_data = simul_data_alpha
 

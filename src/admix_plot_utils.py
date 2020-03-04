@@ -10,6 +10,8 @@ from matplotlib.cm import ScalarMappable
 from numpy import polyfit
 from itertools import product
 from mpl_toolkits.axes_grid1 import ImageGrid
+import matplotlib.patheffects as PathEffects
+
 
 
 def my_ceil(a, precision=0):
@@ -18,6 +20,31 @@ def my_ceil(a, precision=0):
 
 def my_floor(a, precision=0):
     return np.round(a - 0.5 * 10 ** (-precision), precision)
+
+
+def set_cmap_levels(max_value, min_value, midpoint=1, digits=1, nticks=15):
+    if midpoint < min_value:
+        midpoint = min_value
+
+    if digits <= 2:
+        wd = (5 ** ((digits + 1) % 2)) * (1 / 10 ** digits)
+        min_value = min_value - min_value % wd
+        max_value = max_value - max_value % wd + wd
+        lower_levels = np.arange(round(min_value, digits), midpoint, wd)
+        upper_levels = np.arange(midpoint, round(max_value, digits) + wd, wd)
+    else:
+        upper_nticks = int(round(nticks * (max_value - midpoint) / (max_value - min_value)))
+        lower_nticks = int(round(nticks * (midpoint - min_value) / (max_value - min_value)))
+        lower_levels = np.round(np.linspace(min_value, midpoint, lower_nticks), decimals=2)
+        upper_levels = np.round(
+            np.linspace(midpoint, max_value, upper_nticks, endpoint=True), decimals=2
+        )
+
+    lower_ticks = lower_levels[::-1][1::2][::-1]
+    upper_ticks = upper_levels[0::2]
+    levels = np.hstack((lower_levels, upper_levels))
+    ticks = np.hstack((lower_ticks, upper_ticks))
+    return (np.unique(levels), np.unique(ticks))
 
 
 def add_inner_title(ax, title, loc, size=None, **kwargs):
@@ -505,6 +532,201 @@ def multi_contour(simul_data, alpha_list=[0.2, 0.5, 0.8], savefig=True, showfig=
 
     if savefig:
         figname = "../figures/multi_contour.pdf"
+        fig.savefig(figname)
+    if showfig:
+        fig.show()
+
+
+def alpha_contour(simul_data, savefig=True, showfig=True):
+    Nb = simul_data.Nb.unique()
+    alpha_list = simul_data.alpha.unique()
+    t_div_list = simul_data.t_div.unique()
+    Na = simul_data.Na.unique()
+    psize = len(t_div_list), len(alpha_list)
+
+    def get_stat(stat):
+        data = simul_data
+        x = data.t_div.values.reshape(psize) / (2 * Na)
+        y = data.alpha.values.reshape(psize)
+
+        if stat == "mean_nucleotide_div":
+            h1 = data.loc[:, "mean_nucleotide_div_pop_a"].values
+            h2 = data.loc[:, "mean_nucleotide_div_pop_c"].values
+            z = (h2 / h1).reshape(psize)
+            z_th = ctu.admix_coal_time_ratio(x, y, Nb / Na)
+            s_label = r"   $\frac{\pi_A}{\pi_0}$"
+
+        elif stat == "mean_num_seg_sites":
+            h1 = data.loc[:, "mean_num_seg_sites_pop_a"].values
+            h2 = data.loc[:, "mean_num_seg_sites_pop_c"].values
+            z = (h2 / h1).reshape(psize)
+            n = data.num_samples.unique()
+            z_th = ctu.s_admix_ratio((2 * Na) * x, n, 2 * Na, 2 * Nb, y)
+            s_label = r"   $\frac{S_A}{S_0}$"
+
+        return (x, y, z, z_th, s_label)
+
+    cmap = plt.get_cmap("bwr")
+    fig, (ax1, ax2) = plt.subplots(1, 2, sharey=True)
+
+    def make_subplot(stat, ax, digits=2, nticks=5):
+        midpoint = 1
+        norm = MidPointNorm(midpoint=midpoint)
+        aux = simul_data.loc[:, stat + "_pop_c"] / simul_data.loc[:, stat + "_pop_a"]
+        z_max = my_ceil(aux.max(), precision=digits)
+        z_min = my_floor(aux.min(), precision=digits)
+        cmap_levels, cmap_ticks = set_cmap_levels(
+            z_max, z_min, midpoint=midpoint, digits=digits, nticks=nticks
+        )
+
+        x, y, z, z_th, cbar_label = get_stat(stat)
+        ax.tick_params(labelsize=12)
+        ax.set_xticks([0, 0.5, 1])
+        ax.set_xticklabels(["  0", "0.5", "1  "])
+        ax.set_xlim((0, 1))
+        ax.set_xlabel(r"$T_s/(2 N_0)$ ", size=16)
+        ax.set_ylabel(r"$\alpha$", size=20, rotation=0, labelpad=10)
+
+        ct = ax.contourf(x, y, z, levels=cmap_levels, cmap=cmap, norm=norm)
+        ct_th = ax.contour(x, y, z_th, levels=cmap_levels, colors="black", linestyles="dashed")
+        ax.clabel(ct_th, cmap_ticks, inline=True, fmt=f"%.1f", fontsize=10)
+
+        # cbar = ax.cax.colorbar(ct, ticks=cmap_ticks)
+        # cbar.set_label_text(cbar_label, size=20, rotation=0)
+        return ax
+
+    make_subplot("mean_nucleotide_div", ax1)
+    make_subplot("mean_num_seg_sites", ax2)
+
+    # for ax, im_title in zip(grid1, ["(a)", "(b)", "(c)"]):
+    #    t = add_inner_title(ax, im_title, loc=2)
+    #    t.patch.set_ec("none")
+    #    t.patch.set_alpha(0.5)
+
+    # for ax, im_title in zip(grid2, ["(d)", "(e)", "(f)"]):
+    #    t = add_inner_title(ax, im_title, loc=2)
+    #    t.patch.set_ec("none")
+    #    t.patch.set_alpha(0.5)
+
+    fig.tight_layout()
+    if savefig:
+        figname = "../figures/multi_alpha_contour.pdf"
+        fig.savefig(figname)
+    if showfig:
+        fig.show()
+
+
+def multi_alpha(simul_data, Nb_list_prop=[0.3, 0.5, 0.7], savefig=True, showfig=True):
+    alpha_list = simul_data.alpha.unique()
+    t_div_list = simul_data.t_div.unique()
+    Na = simul_data.Na.unique()
+    Nb_list = np.array(Nb_list_prop) * Na
+    psize = len(t_div_list), len(alpha_list)
+
+    def get_stat(Nb_ref, stat):
+        data = simul_data[simul_data.Nb == Nb_ref]
+        x = data.t_div.values.reshape(psize) / (2 * Na)
+        y = data.alpha.values.reshape(psize)
+
+        if stat == "mean_nucleotide_div":
+            h1 = data.loc[:, "mean_nucleotide_div_pop_a"].values
+            h2 = data.loc[:, "mean_nucleotide_div_pop_c"].values
+            z = (h2 / h1).reshape(psize)
+            z_th = ctu.admix_coal_time_ratio(x, y, Nb_ref / Na)
+            s_label = r"   $\frac{\pi_A}{\pi_0}$"
+
+        elif stat == "mean_num_seg_sites":
+            h1 = data.loc[:, "mean_num_seg_sites_pop_a"].values
+            h2 = data.loc[:, "mean_num_seg_sites_pop_c"].values
+            z = (h2 / h1).reshape(psize)
+            n = data.num_samples.unique()
+            z_th = ctu.s_admix_ratio((2 * Na) * x, n, 2 * Na, 2 * Nb_ref, y)
+            s_label = r"   $\frac{S_A}{S_0}$"
+
+        return (x, y, z, z_th, s_label)
+
+    cmap = plt.get_cmap("bwr")
+    fig = plt.figure()
+
+    def make_grid(stat, rect, digits=1, nticks=3):
+        midpoint = 1
+        norm = MidPointNorm(midpoint=midpoint)
+        data_aux = simul_data[simul_data.alpha.isin(alpha_list)]
+        aux = data_aux.loc[:, stat + "_pop_c"] / data_aux.loc[:, stat + "_pop_a"]
+        z_max = my_ceil(aux.max(), precision=digits)
+        z_min = my_floor(aux.min(), precision=digits)
+        cmap_levels, cmap_ticks = set_cmap_levels(
+            z_max, z_min, midpoint=midpoint, digits=digits, nticks=nticks
+        )
+
+        grid = ImageGrid(
+            fig,
+            rect,
+            nrows_ncols=(1, 3),
+            aspect=1,
+            direction="row",
+            axes_pad=0.08,
+            add_all=True,
+            label_mode="L",
+            share_all=True,
+            cbar_location="right",
+            cbar_mode="single",
+            cbar_size="5%",
+            cbar_pad=0.05,
+        )
+
+        for ax_id, Nb_ref in enumerate(Nb_list):
+            x, y, z, z_th, cbar_label = get_stat(Nb_ref, stat)
+            ax = grid[ax_id]
+            ax.tick_params(labelsize=12)
+            ax.set_ylabel(r"$\alpha$", size=20, rotation=0, labelpad=10)
+            ax.set_xticks([0, 0.5, 1])
+            ax.set_xticklabels(["  0", "0.5", "1  "])
+            ax.set_xlim((0, 1))
+            if stat is "mean_nucleotide_div":
+                ax.set_title(r"$\kappa={{{}}}$".format(Nb_list_prop[ax_id]), size=16)
+            if stat is "mean_num_seg_sites":
+                if ax_id == 1:
+                    ax.set_xlabel(r"split time ($2 N_0$  coalescent units)", size=16)
+
+            ct = ax.contourf(x, y, z, levels=cmap_levels, cmap=cmap, norm=norm)
+            ct_th = ax.contour(x, y, z_th, levels=cmap_levels, colors="black", linestyles="dashed")
+            ax.clabel(ct_th, cmap_ticks, inline=True, fmt=f"%.1f", fontsize=10)
+            if ax_id == 2:
+                ax.plot(0.09, 0.85, "P", color="black", markersize="8")
+                ax.plot(0.09, 0.23, "X", color="black", markersize="8")
+                ax.text(
+                    0.09,
+                    0.85,
+                    "  ASW",
+                    path_effects=[PathEffects.withStroke(linewidth=4, foreground="w")],
+                )
+                ax.text(
+                    0.09,
+                    0.23,
+                    "  BRL",
+                    path_effects=[PathEffects.withStroke(linewidth=4, foreground="w")],
+                )
+
+        cbar = ax.cax.colorbar(ct, ticks=cmap_ticks)
+        cbar.set_label_text(cbar_label, size=20, rotation=0)
+        return grid
+
+    grid1 = make_grid("mean_nucleotide_div", 211)
+    grid2 = make_grid("mean_num_seg_sites", 212)
+
+    for ax, im_title in zip(grid1, ["(a)", "(b)", "(c)"]):
+        t = add_inner_title(ax, im_title, loc=1)
+        t.patch.set_ec("none")
+        t.patch.set_alpha(0.5)
+
+    for ax, im_title in zip(grid2, ["(d)", "(e)", "(f)"]):
+        t = add_inner_title(ax, im_title, loc=1)
+        t.patch.set_ec("none")
+        t.patch.set_alpha(0.5)
+
+    if savefig:
+        figname = "../figures/multi_alpha.pdf"
         fig.savefig(figname)
     if showfig:
         fig.show()
