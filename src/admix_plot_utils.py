@@ -13,7 +13,6 @@ from mpl_toolkits.axes_grid1 import ImageGrid
 import matplotlib.patheffects as PathEffects
 
 
-
 def my_ceil(a, precision=0):
     return np.round(a + 0.5 * 10 ** (-precision), precision)
 
@@ -651,7 +650,7 @@ def multi_alpha(simul_data, Nb_list_prop=[0.3, 0.5, 0.7], savefig=True, showfig=
     def make_grid(stat, rect, digits=1, nticks=3):
         midpoint = 1
         norm = MidPointNorm(midpoint=midpoint)
-        data_aux = simul_data[simul_data.alpha.isin(alpha_list)]
+        data_aux = simul_data[simul_data.Nb.isin(Nb_list)]
         aux = data_aux.loc[:, stat + "_pop_c"] / data_aux.loc[:, stat + "_pop_a"]
         z_max = my_ceil(aux.max(), precision=digits)
         z_min = my_floor(aux.min(), precision=digits)
