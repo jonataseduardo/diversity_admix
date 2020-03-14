@@ -11,6 +11,8 @@ from numpy import polyfit
 from itertools import product
 from mpl_toolkits.axes_grid1 import ImageGrid
 import matplotlib.patheffects as PathEffects
+import matplotlib.cm as cm
+import matplotlib.colors
 
 
 def my_ceil(a, precision=0):
@@ -736,11 +738,16 @@ def min_alpha(h_ratio, Fst):
     return np.ma.masked_outside(alpha, 0, 1)
 
 
+def alpha_pi_max(h_ratio, Fst):
+    alpha = ((3 * Fst - 2) * h_ratio + Fst) / (2 * (2 * Fst - 1) * (1 + h_ratio))
+    return np.ma.masked_outside(alpha, 0, 1)
+
+
 def h_min(Fst):
     return (1 - 3 * Fst) / (1 + Fst)
 
 
-def make_alpha_fst_plot(savefig=True, showfig=False):
+def alpha_min_plot(savefig=True, showfig=False):
     hr = fst = np.linspace(0.001, 0.999, 150)
     X, Y = np.meshgrid(hr, fst, indexing="ij")
     Z = min_alpha(X, Y)
@@ -755,12 +762,40 @@ def make_alpha_fst_plot(savefig=True, showfig=False):
     ax.tick_params(labelsize=12)
     ax.set_ylim((0, 1))
     ax.set_xlabel(r"$F_{st}$", size=22)
-    ax.set_ylabel(r"$\frac{\pi_1}{\pi_0}$", size=24, rotation=0, labelpad=12)
+    ax.set_ylabel(r"$\frac{\pi_1}{\pi_0}$", size=26, rotation=0, labelpad=12)
     axcb = fig.colorbar(im)
-    axcb.set_label(r"$\alpha^*$", size=22, rotation=0, labelpad=12)
+    axcb.set_label(r"$\alpha^*_\pi$", size=22, rotation=0, labelpad=12)
     axcb.ax.tick_params(labelsize=12)
     fig.tight_layout()
-    figname = "../figures/alpha_min_fst.pdf"
+    figname = "../figures/alpha_min.pdf"
+    if savefig:
+        fig.savefig(figname)
+    if showfig:
+        fig.show()
+    pass
+
+
+def alpha_max_plot(savefig=True, showfig=False):
+    hr = fst = np.linspace(0.001, 0.999, 150)
+    X, Y = np.meshgrid(hr, fst, indexing="ij")
+    Z = alpha_pi_max(X, Y)
+
+    # norm = matplotlib.colors.Normalize(vmin=0, vmax=1)
+    cmap = cm.get_cmap("viridis_r")
+    fig, ax = plt.subplots()
+    # ax.plot(fst, h_min(fst), color=cmap(np.max(Z)), lw=2)
+    im = ax.imshow(
+        Z, cmap=cmap, vmax=1, vmin=0, interpolation="nearest", origin="lower", extent=[0, 1, 0, 1]
+    )
+    ax.tick_params(labelsize=12)
+    ax.set_ylim((0, 1))
+    ax.set_xlabel(r"$F_{st}$", size=22)
+    ax.set_ylabel(r"$\frac{\pi_1}{\pi_0}$", size=26, rotation=0, labelpad=12)
+    axcb = fig.colorbar(im)
+    axcb.set_label(r"$\alpha^{**}_\pi$", size=22, rotation=0, labelpad=12)
+    axcb.ax.tick_params(labelsize=12)
+    fig.tight_layout()
+    figname = "../figures/alpha_max.pdf"
     if savefig:
         fig.savefig(figname)
     if showfig:
