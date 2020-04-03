@@ -180,8 +180,9 @@ class OutOfAfricaAdmixture(Simulation):
         # alpha2 is the proportion of AS population
         self.Ne = N_A
         self.alpha2 = alpha2
-        # alpha1 is the proportion of YRI population
-        self.alpha1 = (1 - alpha1) / (1 - alpha2)
+        # alpha1 is the proportion of YRI population and self.alpha1 is the proportion of
+        # CEU pop for the msprime 2 sources admixture process
+        self.alpha1 = (1 - alpha1 - alpha2) / (1 - alpha2)
 
         self.T_AF = T_AF_years / generation_time
         self.T_B = T_B_years / generation_time
