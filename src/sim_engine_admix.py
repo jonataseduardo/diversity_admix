@@ -75,7 +75,7 @@ class DivergenceAdmixture(Simulation):
         ]
 
 
-class ooa_3sources(Simulation):
+class OutOfAfrica(Simulation):
     """
     Runs Out Africa Simulation with Jouganous 2017 parameters
     """
@@ -102,6 +102,7 @@ class ooa_3sources(Simulation):
         m_EU_AS=9.6e-5,
     ):
         super().__init__()
+        self.Ne = N_A
         self.T_AF = T_AF_years / generation_time
         self.T_B = T_B_years / generation_time
         self.T_EU_AS = T_EU_AS_years / generation_time
@@ -141,7 +142,7 @@ class ooa_3sources(Simulation):
         )
 
 
-class ooa_admix_3sources(Simulation):
+class OutOfAfricaAdmixture(Simulation):
     """
     Runs Out Africa Simulation with Jouganous 2017 parameters
     """
@@ -177,6 +178,7 @@ class ooa_admix_3sources(Simulation):
         super().__init__()
 
         # alpha2 is the proportion of AS population
+        self.Ne = N_A
         self.alpha2 = alpha2
         # alpha1 is the proportion of YRI population
         self.alpha1 = (1 - alpha1) / (1 - alpha2)
