@@ -193,13 +193,10 @@ def RunOutOfAfricaAdmixture(simul_type="test", num_samples=1000, n_jobs=2):
 
 if __name__ == "__main__":
     output_ooa_test = RunDivergenceAdmixture(simul_type="test")
-    %time output_ooa_2sources = RunOutOfAfricaAdmixture(simul_type="2sources", n_jobs=3)
-    %time output_ooa_3sources = RunOutOfAfricaAdmixture(simul_type="3sources", n_jobs=3)
-    cout = output_ooa_3sources.columns
-    cols = ["alpha1", "alpha2"] + [i for i in cout if "mean_nucleotide_div_" in i]
-    cols = ["alpha1", "alpha2"] + [i for i in cout if "mean_num_seg_sites_" in i]
-    output_ooa_2sources.loc[:,cols]
-    output_ooa_3sources.loc[:,cols]
+    output_ooa_2sources = RunOutOfAfricaAdmixture(simul_type="2sources", n_jobs=3)
+    output_ooa_3sources = RunOutOfAfricaAdmixture(simul_type="3sources", n_jobs=3)
+    # cols = ["alpha1", "alpha2"] + [i for i in cout if "mean_num_seg_sites_" in i]
+    # output_ooa_2sources.loc[:,cols]
     output_1 = RunDivergenceAdmixture(simul_type="long", num_samples=100, n_jobs=120)
     output_2 = RunDivergenceAdmixture(simul_type="fine_alpha", num_samples=100, n_jobs=120)
 
