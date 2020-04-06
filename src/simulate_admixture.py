@@ -12,10 +12,8 @@ from sim_engine_admix import DivergenceAdmixture
 from sim_engine_admix import OutOfAfricaAdmixture
 from sim_engine_admix import OutOfAfrica
 import coal_sim_utils as csu
-from importlib import reload
 
 reload(sim_engine_admix)
-
 
 def eval_statistics(simul_trees):
 
@@ -129,14 +127,24 @@ def RunOOA(
     n=100, t_adm=0, alpha1=0.2, alpha2=0.05, length=1e4, mutation_rate=1e-8, num_replicates=500,
 ):
 
-    admix_sim = OutOfAfricaAdmixture(t_adm=t_adm, alpha1=alpha1, alpha2=alpha2, n=n)
+    alpha1=0.5
+    alpha2=0.05
+    n=10
+    num_replicates = 10
+    length=1e4
+    mutation_rate=1e-8
+
+    admix_sim = OutOfAfricaAdmixture(t_adm=t_adm, alpha1=alpha1, alpha2=alpha2, n=n, debug=True)
+    admix_sim.dd.print_history()
+    #admix_sim = OutOfAfrica(n=n)
 
     ts_result = admix_sim.simulate(
         length=length, mutation_rate=mutation_rate, num_replicates=num_replicates
     )
 
+    ts_result
     # Create a list from the simulated trees
-    simul_trees = [ts for ts in ts_result]
+    simul_trees = [ts for ts, i  in zip(ts_result, range(2))]
 
     return eval_statistics(simul_trees)
 
@@ -149,8 +157,6 @@ def RunOutOfAfricaAdmixture(simul_type="test", num_samples=1000, n_jobs=2):
     if simul_type is "test":
         alpha2 = 0.05
         alpha1_list = np.linspace(0, 1 - alpha2, 3)
-        alpha1_list
-        np.round((1 - alpha1_list - alpha2) / (1 - alpha2), decimals=5)
         num_replicates = 10
         num_samples = 20
     if simul_type is "2sources":
@@ -168,12 +174,13 @@ def RunOutOfAfricaAdmixture(simul_type="test", num_samples=1000, n_jobs=2):
     pout = Parallel(n_jobs=n_jobs, prefer="processes", backend="loky")(
         delayed(run_simul)(i) for i in product(alpha1_list, [alpha2], [num_replicates])
     )
-    # for i in product(alpha1_list, [alpha2], [num_replicates]):
-    #    print(run_simul(i))
+    #for i in product(alpha1_list, [alpha2], [num_replicates]):
+    #   print(run_simul(i))
 
     time_stamp = datetime.datetime.now().isoformat().split(".")[0]
 
     pop_labels = ["pop_a", "pop_c", "pop_b", "pop_d"]
+    #pop_labels = ["pop_a", "pop_c", "pop_b"]
     stats_labels = [
         "mean_num_seg_sites_",
         "var_num_seg_sites_",
@@ -193,8 +200,8 @@ def RunOutOfAfricaAdmixture(simul_type="test", num_samples=1000, n_jobs=2):
 
 if __name__ == "__main__":
     output_test = RunDivergenceAdmixture(simul_type="test")
-    output_test = RunOutOfAfricaAdmixture(simul_type="test")
-    output_test
+    output_test = RunOutOfAfricaAdmixture(simul_type="test", n_jobs=20)
+    output_test.iloc[:,:5]
     output_1 = RunDivergenceAdmixture(simul_type="long", num_samples=100, n_jobs=120)
     output_2 = RunDivergenceAdmixture(simul_type="fine_alpha", num_samples=100, n_jobs=120)
 

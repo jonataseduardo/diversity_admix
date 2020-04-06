@@ -2,6 +2,7 @@
   Helper functions and classes for simulation of admixed individuals
 """
 
+
 import numpy as np
 import msprime as msp
 
@@ -100,6 +101,7 @@ class OutOfAfrica(Simulation):
         m_AF_EU=3e-5,
         m_AF_AS=1.9e-5,
         m_EU_AS=9.6e-5,
+        n = 10,
     ):
         super().__init__()
         self.Ne = N_A
@@ -109,10 +111,15 @@ class OutOfAfrica(Simulation):
         self.N_EU = N_EU0 / np.exp(-r_EU * self.T_EU_AS)
         self.N_AS = N_AS0 / np.exp(-r_AS * self.T_EU_AS)
 
+        samples = [msp.Sample(population=0, time=0) for _ in range(n)]
+        samples = samples + [msp.Sample(population=1, time=0) for _ in range(n)]
+        samples = samples + [msp.Sample(population=2, time=0) for _ in range(n)]
+        self.samples = samples
+
         self.pop_config = [
-            msp.PopulationConfiguration(sample_size=0, initial_size=N_AF),
-            msp.PopulationConfiguration(sample_size=1, initial_size=self.N_EU, growth_rate=r_EU),
-            msp.PopulationConfiguration(sample_size=1, initial_size=self.N_AS, growth_rate=r_AS),
+            msp.PopulationConfiguration(initial_size=N_AF),
+            msp.PopulationConfiguration(initial_size=self.N_EU, growth_rate=r_EU),
+            msp.PopulationConfiguration(initial_size=self.N_AS, growth_rate=r_AS),
         ]
 
         self.migration_matrix = [
@@ -198,7 +205,7 @@ class OutOfAfricaAdmixture(Simulation):
 
         self.pop_config = [
             msp.PopulationConfiguration(initial_size=N_AF),
-            msp.PopulationConfiguration(initial_size=N_AF),
+            msp.PopulationConfiguration(initial_size=N_AX),
             msp.PopulationConfiguration(initial_size=self.N_EU, growth_rate=r_EU),
             msp.PopulationConfiguration(initial_size=self.N_AS, growth_rate=r_AS),
         ]
@@ -213,17 +220,17 @@ class OutOfAfricaAdmixture(Simulation):
             # Admixture events
             msp.MassMigration(time=t_adm, source=1, dest=3, proportion=self.alpha2),
             msp.MassMigration(time=t_adm + eps, source=1, dest=2, proportion=self.alpha1),
-            msp.MassMigration(time=t_adm + 1.1 * eps, source=1, dest=0),
+            msp.MassMigration(time=t_adm + 2.0 * eps, source=1, dest=0, proportion=1.0),
             # CEU and CHB merge into B with rate changes at T_EU_AS
-            msp.MassMigration(time=self.T_EU_AS, source=2, destination=1, proportion=1.0),
+            msp.MassMigration(time=self.T_EU_AS, source=3, destination=2, proportion=1.0),
             msp.MigrationRateChange(time=self.T_EU_AS, rate=0),
-            msp.MigrationRateChange(time=self.T_EU_AS, rate=m_AF_B, matrix_index=(0, 1)),
-            msp.MigrationRateChange(time=self.T_EU_AS, rate=m_AF_B, matrix_index=(1, 0)),
+            msp.MigrationRateChange(time=self.T_EU_AS, rate=m_AF_B, matrix_index=(0, 2)),
+            msp.MigrationRateChange(time=self.T_EU_AS, rate=m_AF_B, matrix_index=(2, 0)),
             msp.PopulationParametersChange(
-                time=self.T_EU_AS, initial_size=N_B, growth_rate=0, population_id=1
+                time=self.T_EU_AS, initial_size=N_B, growth_rate=0, population_id=2
             ),
             # Population B merges into YRI at T_B
-            msp.MassMigration(time=self.T_B, source=1, destination=0, proportion=1.0),
+            msp.MassMigration(time=self.T_B, source=2, destination=0, proportion=1.0),
             # Size changes to N_A at T_AF
             msp.PopulationParametersChange(time=self.T_AF, initial_size=N_A, population_id=0),
         ]
