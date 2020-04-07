@@ -125,7 +125,7 @@ def RunDivergenceAdmixture(simul_type="test", num_samples=1000, n_jobs=2):
 
 
 def RunOOA(
-    n=100, t_adm=0, alpha1=0.2, alpha2=0.05, length=1e4, mutation_rate=1e-8, num_replicates=500,
+    n=100, t_adm=0, alpha1=0.2, alpha2=0.05, length=1e4, mutation_rate=1.44e-8, num_replicates=500,
 ):
 
     admix_sim = OutOfAfricaAdmixture(t_adm=t_adm, alpha1=alpha1, alpha2=alpha2, n=n, debug=True)
@@ -152,12 +152,12 @@ def RunOutOfAfricaAdmixture(simul_type="test", num_samples=1000, n_jobs=2):
     if simul_type is "2sources":
         alpha2 = 0.00
         alpha1_list = np.linspace(0, 1 - alpha2, 41)[1:-1]
-        num_replicates = 1000
+        num_replicates = 2000
         num_samples = 100
     if simul_type is "3sources":
         alpha2 = 0.05
         alpha1_list = np.linspace(0, 1 - alpha2, 40)[1:]
-        num_replicates = 1000
+        num_replicates = 2000
         num_samples = 100
 
     def run_simul(i):
