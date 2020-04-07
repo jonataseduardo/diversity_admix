@@ -78,7 +78,7 @@ class DivergenceAdmixture(Simulation):
 
 class OutOfAfrica(Simulation):
     """
-    Runs Out Africa Simulation with Jouganous 2017 parameters
+    Runs Out Africa Simulation with Gravel 2011 parameters, taken from msprime tutorial
     """
 
     def __init__(
@@ -101,7 +101,7 @@ class OutOfAfrica(Simulation):
         m_AF_EU=3e-5,
         m_AF_AS=1.9e-5,
         m_EU_AS=9.6e-5,
-        n = 10,
+        n=10,
     ):
         super().__init__()
         self.Ne = N_A
@@ -156,30 +156,30 @@ class OutOfAfricaAdmixture(Simulation):
 
     def __init__(
         self,
-        N_AX=1000,
-        N_A=7300,
-        N_B=2100,
-        N_AF=12300,
-        N_EU0=1000,
-        N_AS0=510,
-        generation_time=25,
-        T_AF_years=220e3,
-        T_B_years=140e3,
-        T_EU_AS_years=21.2e3,
+        N_A=11273,
+        N_B=3104,
+        N_AF=23721,
+        N_EU0=2271,
+        N_AS0=924,
+        generation_time=29,
+        T_AF_years=312e3,
+        T_B_years=125e3,
+        T_EU_AS_years=42.3e3,
         # We need to work out the starting (diploid) population sizes based on
         # the growth rates provided for these two populations
-        r_EU=0.004,
-        r_AS=0.0055,
+        r_EU=0.196e-2,
+        r_AS=0.309e-2,
         # Migration rates during the various epochs.
-        m_AF_B=25e-5,
-        m_AF_EU=3e-5,
-        m_AF_AS=1.9e-5,
-        m_EU_AS=9.6e-5,
+        m_AF_B=15.8e-5,
+        m_AF_EU=1.1e-5,
+        m_AF_AS=0.48e-5,
+        m_EU_AS=4.19e-5,
         n=50,
         alpha1=0.5,
         alpha2=0.5,
         t_adm=0,
         eps=1e-8,
+        N_AX=1000,
         debug=False,
     ):
         super().__init__()
