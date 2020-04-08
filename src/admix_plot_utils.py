@@ -801,3 +801,100 @@ def alpha_max_plot(savefig=True, showfig=False):
     if showfig:
         fig.show()
     pass
+
+
+def ooa_plot(data_ooa, k=4, savefig=True, showfig=False):
+    x1 = data_ooa[data_ooa.alpha2 == 0.0].alpha1
+    y1 = (
+        data_ooa[data_ooa.alpha2 == 0.0].mean_nucleotide_div_pop_c
+        / data_ooa[data_ooa.alpha2 == 0.0].mean_nucleotide_div_pop_a
+    )
+    x1_new = np.linspace(x1.min(), x1.max(), 50)
+    y1_new = np.poly1d(np.polyfit(x1, y1, k))(x1_new)
+
+    z1 = (
+        data_ooa[data_ooa.alpha2 == 0.0].mean_num_seg_sites_pop_c
+        / data_ooa[data_ooa.alpha2 == 0.0].mean_num_seg_sites_pop_a
+    )
+    z1_new = np.poly1d(np.polyfit(x1, z1, k))(x1_new)
+
+    x2 = data_ooa[data_ooa.alpha2 == 0.05].alpha1
+    x2_new = np.linspace(x2.min(), x2.max(), 50)
+    y2 = (
+        data_ooa[data_ooa.alpha2 == 0.05].mean_nucleotide_div_pop_c
+        / data_ooa[data_ooa.alpha2 == 0.0].mean_nucleotide_div_pop_a
+    )
+    y2_new = np.poly1d(np.polyfit(x2, y2, k))(x2_new)
+    z2 = (
+        data_ooa[data_ooa.alpha2 == 0.05].mean_num_seg_sites_pop_c
+        / data_ooa[data_ooa.alpha2 == 0.05].mean_num_seg_sites_pop_a
+    )
+    z2_new = np.poly1d(np.polyfit(x2, z2, k))(x2_new)
+
+    def shared_plot(ax, y_brl, y_asw):
+        ax.plot(np.linspace(0, 1, 10), [1] * 10, color="black", lw=1, ls="dotted")
+        ax.errorbar(
+            0.85,
+            y_asw[0],
+            yerr=np.abs(y_asw[1:2] - y_asw[0]),
+            marker="P",
+            color="black",
+            markersize="8",
+        )
+        ax.errorbar(
+            0.23,
+            y_brl[0],
+            yerr=np.abs(y_brl[1:2] - y_brl[0]),
+            marker="X",
+            color="black",
+            markersize="8",
+        )
+        ax.text(
+            0.85,
+            y_asw[0],
+            "  ASW",
+            path_effects=[PathEffects.withStroke(linewidth=4, foreground="w")],
+        )
+        ax.text(
+            0.23,
+            y_brl[0],
+            "  BRL",
+            path_effects=[PathEffects.withStroke(linewidth=4, foreground="w")],
+        )
+
+    fig = plt.figure()
+    ax1 = fig.add_subplot(121)
+    ax1.scatter(x1, y1, color="darkorange", marker="o", s=26, alpha=0.5)
+    ax1.plot(x1_new, y1_new, color="darkorange", linewidth=3, ls="solid")
+    ax1.scatter(x2, y2, color="seagreen", marker="D", s=26, alpha=0.5)
+    ax1.plot(x2_new, y2_new, color="seagreen", linewidth=3, ls="dashed")
+    ax1.set_ylabel(r"$\pi_{adm}/\pi_{afr}$", size=18)
+    ax1.set_xlabel(r"$\alpha_{afr}$", size=18)
+    ax1.tick_params(labelsize=12)
+    shared_plot(ax1, y_brl=np.array([0.66, 0.37, 0.88]), y_asw=np.array([1.00, 0.877, 1.141]))
+
+    ax2 = fig.add_subplot(122, sharey=ax1)
+    ax2.scatter(
+        x1, z1, color="darkorange", marker="o", s=26, alpha=0.5, label=r"$\alpha_{eas}= 0\%$"
+    )
+    ax2.plot(x1_new, z1_new, color="darkorange", linewidth=3, ls="solid")
+    ax2.scatter(x2, z2, color="seagreen", marker="D", s=26, alpha=0.5, label=r"$\alpha_{eas}= 5\%$")
+    ax2.plot(x2_new, z2_new, color="seagreen", linewidth=3, ls="dashed")
+    ax2.set_ylabel(r"$S_{adm}/S_{afr}$", size=18)
+    ax2.set_xlabel(r"$\alpha_{afr}$", size=18)
+    ax2.tick_params(labelsize=12)
+    ax2.legend(loc="lower right", fontsize=12)
+    shared_plot(ax2, y_brl=np.array([0.60, 0.42, 0.74]), y_asw=np.array([1.07, 0.94, 1.25]))
+
+    for ax, im_title in zip([ax1, ax2], ["(a)", "(b)"]):
+        t = add_inner_title(ax, im_title, loc=2)
+        t.patch.set_ec("none")
+        t.patch.set_alpha(0.5)
+
+    fig.tight_layout()
+
+    if savefig:
+        figname = "../figures/ooa_plot.pdf"
+        fig.savefig(figname)
+    if showfig:
+        fig.show()
