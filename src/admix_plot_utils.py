@@ -693,18 +693,18 @@ def multi_alpha(simul_data, Nb_list_prop=[0.3, 0.5, 0.7], savefig=True, showfig=
             ct = ax.contourf(x, y, z, levels=cmap_levels, cmap=cmap, norm=norm)
             ct_th = ax.contour(x, y, z_th, levels=cmap_levels, colors="black", linestyles="dashed")
             ax.clabel(ct_th, cmap_ticks, inline=True, fmt=f"%.1f", fontsize=10)
-            if ax_id == 2:
-                ax.plot(0.09, 0.85, "P", color="black", markersize="8")
+            if ax_id != 0:
+                ax.plot(0.09, 0.76, "P", color="black", markersize="8")
                 ax.plot(0.09, 0.23, "X", color="black", markersize="8")
                 ax.text(
                     0.09,
-                    0.85,
+                    0.76,
                     "  ASW",
                     path_effects=[PathEffects.withStroke(linewidth=4, foreground="w")],
                 )
                 ax.text(
                     0.09,
-                    0.23,
+                    0.20,
                     "  BRL",
                     path_effects=[PathEffects.withStroke(linewidth=4, foreground="w")],
                 )
@@ -834,7 +834,7 @@ def ooa_plot(data_ooa, k=4, savefig=True, showfig=False):
     def shared_plot(ax, y_brl, y_asw):
         ax.plot(np.linspace(0, 1, 10), [1] * 10, color="black", lw=1, ls="dotted")
         ax.errorbar(
-            0.85,
+            0.76,
             y_asw[0],
             yerr=np.abs(y_asw[1:2] - y_asw[0]),
             marker="P",
@@ -842,7 +842,7 @@ def ooa_plot(data_ooa, k=4, savefig=True, showfig=False):
             markersize="8",
         )
         ax.errorbar(
-            0.23,
+            0.20,
             y_brl[0],
             yerr=np.abs(y_brl[1:2] - y_brl[0]),
             marker="X",
@@ -850,14 +850,14 @@ def ooa_plot(data_ooa, k=4, savefig=True, showfig=False):
             markersize="8",
         )
         ax.text(
-            0.85,
-            y_asw[0],
+            0.76,
+            y_asw[1],
             "  ASW",
             path_effects=[PathEffects.withStroke(linewidth=4, foreground="w")],
         )
         ax.text(
-            0.23,
-            y_brl[0],
+            0.20,
+            y_brl[1],
             "  BRL",
             path_effects=[PathEffects.withStroke(linewidth=4, foreground="w")],
         )
@@ -883,7 +883,7 @@ def ooa_plot(data_ooa, k=4, savefig=True, showfig=False):
     ax2.set_ylabel(r"$S_{adm}/S_{afr}$", size=18)
     ax2.set_xlabel(r"$\alpha_{afr}$", size=18)
     ax2.tick_params(labelsize=12)
-    ax2.legend(loc="lower right", fontsize=12)
+    ax2.legend(loc="center left", bbox_to_anchor=(0.32, 0.25), fontsize=12)
     shared_plot(ax2, y_brl=np.array([0.60, 0.42, 0.74]), y_asw=np.array([1.07, 0.94, 1.25]))
 
     for ax, im_title in zip([ax1, ax2], ["(a)", "(b)"]):

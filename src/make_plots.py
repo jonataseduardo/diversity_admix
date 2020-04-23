@@ -39,6 +39,8 @@ if __name__ == "__main__":
     # apu.contour_stats(simul_data, alpha_ref, stat="mean_num_seg_sites", showfig=True)
 
     simul_data_alpha = pd.read_csv("../data/results_fine_alpha_2020-03-03T22:33:58.csv.gz")
+
+    reload(apu)
     apu.multi_alpha(simul_data_alpha)
     apu.alpha_contour(simul_data_alpha)
 
