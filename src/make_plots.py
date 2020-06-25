@@ -46,10 +46,10 @@ if __name__ == "__main__":
 
     data_ooa = pd.concat(
         [
-            pd.read_csv("../data/results_ooa_2sources_2020-04-07T15:02:29.csv.gz"),
-            pd.read_csv("../data/results_ooa_3sources_2020-04-07T15:05:38.csv.gz"),
+            pd.read_csv("../data/results_ooa_2sources_2020-06-25T16:27:24.csv.gz"),
+            pd.read_csv("../data/results_ooa_3sources_2020-06-25T16:30:54.csv.gz"),
         ]
     )
 
     reload(apu)
-    apu.ooa_plot(data_ooa, showfig=True)
+    apu.ooa_plot(data_ooa, showfig=True, savefig=True)
