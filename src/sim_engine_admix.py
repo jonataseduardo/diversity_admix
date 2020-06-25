@@ -138,6 +138,9 @@ class OutOfAfrica(Simulation):
             ),
             # Population B merges into YRI at T_B
             msp.MassMigration(time=self.T_B, source=1, destination=0, proportion=1.0),
+            msp.MigrationRateChange(
+                time=self.T_B, rate=0
+            ),  # NB this line was missing (see Ragsdale biorxiv)
             # Size changes to N_A at T_AF
             msp.PopulationParametersChange(time=self.T_AF, initial_size=N_A, population_id=0),
         ]
@@ -231,6 +234,9 @@ class OutOfAfricaAdmixture(Simulation):
             ),
             # Population B merges into YRI at T_B
             msp.MassMigration(time=self.T_B, source=2, destination=0, proportion=1.0),
+            msp.MigrationRateChange(
+                time=self.T_B, rate=0
+            ),  # NB this line was missing (see Ragsdale biorxiv)
             # Size changes to N_A at T_AF
             msp.PopulationParametersChange(time=self.T_AF, initial_size=N_A, population_id=0),
         ]
